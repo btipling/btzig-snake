@@ -44,18 +44,30 @@ pub fn main() !void {
         std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
     }
 
-    var vertices: [9]gl.Float = [9]gl.Float{
-        -0.7, -0.5, 0.0,
-        0.7,  -0.5, 0.0,
-        0.0,  0.7,  0.0,
+    var vertices = [_]gl.Float{
+        0.5,  0.5,  0.0,
+        0.5,  -0.5, 0.0,
+        -0.5, -0.5, 0.0,
+        -0.5, 0.5,  0.0,
+    };
+    var indices = [_]gl.Uint{
+        0, 1, 3, // first triangle
+        1, 2, 3, // second triangle
     };
 
     var VAO: gl.Uint = undefined;
     gl.genVertexArrays(1, &VAO);
     gl.bindVertexArray(VAO);
+
     var VBO: gl.Uint = undefined;
     gl.genBuffers(1, &VBO);
     gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
+
+    var EBO: gl.Uint = undefined;
+    gl.genBuffers(1, &EBO);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(gl.Int), &indices, gl.STATIC_DRAW);
+
     gl.bufferData(gl.ARRAY_BUFFER, vertices.len * @sizeOf(gl.Float), &vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * @sizeOf(gl.Float), null);
     gl.enableVertexAttribArray(0);
@@ -164,7 +176,7 @@ pub fn main() !void {
             std.debug.print("error: {d}\n", .{e});
             return;
         }
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return;
