@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdl = @import("zsdl");
 const gl = @import("zopengl");
+const matrix = @import("math/matrix.zig");
 
 pub fn main() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -45,14 +46,14 @@ pub fn main() !void {
     }
 
     var vertices = [_]gl.Float{
-        0.5,  0.5,  0.0,
-        0.5,  -0.5, 0.0,
-        -0.5, -0.5, 0.0,
-        -0.5, 0.5,  0.0,
+        0.5,  0.5,
+        0.5,  -0.5,
+        -0.5, -0.5,
+        -0.5, 0.5,
     };
     var indices = [_]gl.Uint{
-        0, 1, 3, // first triangle
-        1, 2, 3, // second triangle
+        0, 1, 3,
+        1, 2, 3,
     };
 
     var VAO: gl.Uint = undefined;
@@ -69,7 +70,7 @@ pub fn main() !void {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(gl.Int), &indices, gl.STATIC_DRAW);
 
     gl.bufferData(gl.ARRAY_BUFFER, vertices.len * @sizeOf(gl.Float), &vertices, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * @sizeOf(gl.Float), null);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(gl.Float), null);
     gl.enableVertexAttribArray(0);
     var e = gl.getError();
     if (e != gl.NO_ERROR) {
@@ -128,6 +129,7 @@ pub fn main() !void {
         std.debug.print("error: {d}\n", .{e});
         return;
     }
+
     gl.linkProgram(shaderProgram);
     gl.getProgramiv(shaderProgram, gl.LINK_STATUS, &success);
     if (success == 0) {
@@ -176,6 +178,21 @@ pub fn main() !void {
             std.debug.print("error: {d}\n", .{e});
             return;
         }
+
+        var transV = [_]gl.Float{
+            0.5, 0.5,
+            0.5, 0.5,
+        };
+
+        var transform = matrix.scaleTranslateMat3(transV);
+        const location = gl.getUniformLocation(shaderProgram, "transform");
+        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return;
+        }
+
         gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
