@@ -20,8 +20,8 @@ pub fn main() !void {
         "zig-gamedev: minimal_sdl_gl",
         sdl.Window.pos_undefined,
         sdl.Window.pos_undefined,
-        600,
-        600,
+        1250,
+        1250,
         .{ .opengl = true, .allow_highdpi = true },
     );
     defer window.destroy();
@@ -45,6 +45,8 @@ pub fn main() !void {
         std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
     }
 
+    var boxLen: gl.Float = 1.0;
+    _ = boxLen;
     var vertices = [_]gl.Float{
         0.5,  0.5,
         0.5,  -0.5,
@@ -155,13 +157,41 @@ pub fn main() !void {
     }
     std.debug.print("program set up \n", .{});
 
+    var boxX: gl.Float = 0.0;
+    var boxY: gl.Float = 0.0;
     main_loop: while (true) {
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
             if (event.type == .quit) {
                 break :main_loop;
             } else if (event.type == .keydown) {
-                if (event.key.keysym.sym == .escape) break :main_loop;
+                if (event.key.keysym.sym == .escape) {
+                    break :main_loop;
+                } else {
+                    switch (event.key.keysym.sym) {
+                        .left => boxX -= 1,
+                        .a => boxX -= 1,
+                        .right => boxX += 1,
+                        .d => boxX += 1,
+                        .up => boxY -= 1,
+                        .w => boxY -= 1,
+                        .down => boxY += 1,
+                        .s => boxY += 1,
+                        else => {},
+                    }
+                    if (boxX < 0) {
+                        boxX = 0;
+                    }
+                    if (boxY < 0) {
+                        boxY = 0;
+                    }
+                    if (boxX >= 39) {
+                        boxX = 39;
+                    }
+                    if (boxY >= 39) {
+                        boxY = 39;
+                    }
+                }
             }
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
@@ -179,9 +209,13 @@ pub fn main() !void {
             return;
         }
 
+        var scaleX: gl.Float = 0.05;
+        var scaleY: gl.Float = 0.05;
+        var posX: gl.Float = -1.0 + (boxX * scaleX) + (scaleX / 2);
+        var posY: gl.Float = 1.0 - (boxY * scaleY) - (scaleY / 2);
         var transV = [_]gl.Float{
-            0.5, 0.5,
-            0.5, 0.5,
+            scaleX, scaleY,
+            posX,   posY,
         };
 
         var transform = matrix.scaleTranslateMat3(transV);
