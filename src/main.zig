@@ -9,8 +9,8 @@ pub fn main() !void {
     try sdl.init(.{ .audio = true, .video = true });
     defer sdl.quit();
 
-    const gl_major = 3;
-    const gl_minor = 3;
+    const gl_major = 4;
+    const gl_minor = 6;
     try sdl.gl.setAttribute(.context_profile_mask, @intFromEnum(sdl.gl.Profile.core));
     try sdl.gl.setAttribute(.context_major_version, gl_major);
     try sdl.gl.setAttribute(.context_minor_version, gl_minor);
