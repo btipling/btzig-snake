@@ -2,6 +2,7 @@ const std = @import("std");
 const sdl = @import("zsdl");
 const gl = @import("zopengl");
 const matrix = @import("math/matrix.zig");
+const cfg = @import("config.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -17,11 +18,11 @@ pub fn start() !void {
     try sdl.gl.setAttribute(.context_flags, @as(i32, @bitCast(sdl.gl.ContextFlags{ .forward_compatible = true })));
 
     const window = try sdl.Window.create(
-        "zig-gamedev: minimal_sdl_gl",
+        cfg.game_name,
         sdl.Window.pos_undefined,
         sdl.Window.pos_undefined,
-        1250,
-        1250,
+        cfg.windows_width,
+        cfg.windows_height,
         .{ .opengl = true, .allow_highdpi = true },
     );
     defer window.destroy();
@@ -157,8 +158,9 @@ pub fn start() !void {
     }
     std.debug.print("program set up \n", .{});
 
-    var boxX: gl.Float = 0.0;
-    var boxY: gl.Float = 0.0;
+    var speed = cfg.initial_speed;
+    var boxX = cfg.initial_start_x;
+    var boxY = cfg.initial_start_y;
     main_loop: while (true) {
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
@@ -169,27 +171,27 @@ pub fn start() !void {
                     break :main_loop;
                 } else {
                     switch (event.key.keysym.sym) {
-                        .left => boxX -= 1,
-                        .a => boxX -= 1,
-                        .right => boxX += 1,
-                        .d => boxX += 1,
-                        .up => boxY -= 1,
-                        .w => boxY -= 1,
-                        .down => boxY += 1,
-                        .s => boxY += 1,
+                        .left => boxX -= speed,
+                        .a => boxX -= speed,
+                        .right => boxX += speed,
+                        .d => boxX += speed,
+                        .up => boxY -= speed,
+                        .w => boxY -= speed,
+                        .down => boxY += speed,
+                        .s => boxY += speed,
                         else => {},
                     }
                     if (boxX < 0) {
-                        boxX = 0;
+                        boxX = 0.0;
                     }
                     if (boxY < 0) {
-                        boxY = 0;
+                        boxY = 0.0;
                     }
-                    if (boxX >= 39) {
-                        boxX = 39;
+                    if (boxX >= cfg.grid_size) {
+                        boxX = cfg.grid_size;
                     }
-                    if (boxY >= 39) {
-                        boxY = 39;
+                    if (boxY >= cfg.grid_size) {
+                        boxY = cfg.grid_size;
                     }
                 }
             }
