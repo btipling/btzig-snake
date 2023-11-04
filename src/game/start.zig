@@ -3,6 +3,7 @@ const sdl = @import("zsdl");
 const gl = @import("zopengl");
 const matrix = @import("math/matrix.zig");
 const cfg = @import("config.zig");
+const segment = @import("segment.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -46,19 +47,6 @@ pub fn start() !void {
         std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
     }
 
-    var boxLen: gl.Float = 1.0;
-    _ = boxLen;
-    var vertices = [_]gl.Float{
-        0.5,  0.5,
-        0.5,  -0.5,
-        -0.5, -0.5,
-        -0.5, 0.5,
-    };
-    var indices = [_]gl.Uint{
-        0, 1, 3,
-        1, 2, 3,
-    };
-
     var VAO: gl.Uint = undefined;
     gl.genVertexArrays(1, &VAO);
     gl.bindVertexArray(VAO);
@@ -70,9 +58,9 @@ pub fn start() !void {
     var EBO: gl.Uint = undefined;
     gl.genBuffers(1, &EBO);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(gl.Int), &indices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, segment.indices.len * @sizeOf(gl.Int), &segment.indices, gl.STATIC_DRAW);
 
-    gl.bufferData(gl.ARRAY_BUFFER, vertices.len * @sizeOf(gl.Float), &vertices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, segment.vertices.len * @sizeOf(gl.Float), &segment.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(gl.Float), null);
     gl.enableVertexAttribArray(0);
     var e = gl.getError();
@@ -167,32 +155,30 @@ pub fn start() !void {
             if (event.type == .quit) {
                 break :main_loop;
             } else if (event.type == .keydown) {
-                if (event.key.keysym.sym == .escape) {
-                    break :main_loop;
-                } else {
-                    switch (event.key.keysym.sym) {
-                        .left => boxX -= speed,
-                        .a => boxX -= speed,
-                        .right => boxX += speed,
-                        .d => boxX += speed,
-                        .up => boxY -= speed,
-                        .w => boxY -= speed,
-                        .down => boxY += speed,
-                        .s => boxY += speed,
-                        else => {},
-                    }
-                    if (boxX < 0) {
-                        boxX = 0.0;
-                    }
-                    if (boxY < 0) {
-                        boxY = 0.0;
-                    }
-                    if (boxX >= cfg.grid_size) {
-                        boxX = cfg.grid_size;
-                    }
-                    if (boxY >= cfg.grid_size) {
-                        boxY = cfg.grid_size;
-                    }
+                switch (event.key.keysym.sym) {
+                    .q => break :main_loop,
+                    .escape => break :main_loop,
+                    .left => boxX -= speed,
+                    .a => boxX -= speed,
+                    .right => boxX += speed,
+                    .d => boxX += speed,
+                    .up => boxY -= speed,
+                    .w => boxY -= speed,
+                    .down => boxY += speed,
+                    .s => boxY += speed,
+                    else => {},
+                }
+                if (boxX < 0) {
+                    boxX = 0.0;
+                }
+                if (boxY < 0) {
+                    boxY = 0.0;
+                }
+                if (boxX >= cfg.grid_size) {
+                    boxX = cfg.grid_size;
+                }
+                if (boxY >= cfg.grid_size) {
+                    boxY = cfg.grid_size;
                 }
             }
         }
@@ -229,7 +215,7 @@ pub fn start() !void {
             return;
         }
 
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((indices.len))), gl.UNSIGNED_INT, null);
+        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((segment.indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return;
