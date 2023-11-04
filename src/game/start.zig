@@ -47,6 +47,8 @@ pub fn start() !void {
         std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
     }
 
+    var seg = segment.Segment.init();
+
     var VAO: gl.Uint = undefined;
     gl.genVertexArrays(1, &VAO);
     gl.bindVertexArray(VAO);
@@ -58,9 +60,9 @@ pub fn start() !void {
     var EBO: gl.Uint = undefined;
     gl.genBuffers(1, &EBO);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, segment.indices.len * @sizeOf(gl.Int), &segment.indices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, seg.indices.len * @sizeOf(gl.Int), &seg.indices, gl.STATIC_DRAW);
 
-    gl.bufferData(gl.ARRAY_BUFFER, segment.vertices.len * @sizeOf(gl.Float), &segment.vertices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, seg.vertices.len * @sizeOf(gl.Float), &seg.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(gl.Float), null);
     gl.enableVertexAttribArray(0);
     var e = gl.getError();
@@ -215,7 +217,7 @@ pub fn start() !void {
             return;
         }
 
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((segment.indices.len))), gl.UNSIGNED_INT, null);
+        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((seg.indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return;
