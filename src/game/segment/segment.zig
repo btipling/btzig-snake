@@ -1,4 +1,5 @@
 const std = @import("std");
+const matrix = @import("../math/matrix.zig");
 const gl = @import("zopengl");
 
 pub const SegmentErr = error{Error};
@@ -176,5 +177,44 @@ pub const Segment = struct {
         }
         std.debug.print("program set up \n", .{});
         return shaderProgram;
+    }
+
+    pub fn draw(self: Segment, posX: gl.Float, posY: gl.Float) !void {
+        gl.useProgram(self.shaderProgram);
+        var e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+        gl.bindVertexArray(self.VAO);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+
+        var scaleX: gl.Float = 0.05;
+        var scaleY: gl.Float = 0.05;
+        var transX: gl.Float = -1.0 + (posX * scaleX) + (scaleX / 2);
+        var transY: gl.Float = 1.0 - (posY * scaleY) - (scaleY / 2);
+        var transV = [_]gl.Float{
+            scaleX, scaleY,
+            transX, transY,
+        };
+
+        var transform = matrix.scaleTranslateMat3(transV);
+        const location = gl.getUniformLocation(self.shaderProgram, "transform");
+        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+
+        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
     }
 };

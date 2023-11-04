@@ -1,7 +1,6 @@
 const std = @import("std");
 const sdl = @import("zsdl");
 const gl = @import("zopengl");
-const matrix = @import("math/matrix.zig");
 const cfg = @import("config.zig");
 const segment = @import("segment/segment.zig");
 
@@ -86,44 +85,7 @@ pub fn start() !void {
             }
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-
-        gl.useProgram(seg.shaderProgram);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return;
-        }
-        gl.bindVertexArray(seg.VAO);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return;
-        }
-
-        var scaleX: gl.Float = 0.05;
-        var scaleY: gl.Float = 0.05;
-        var posX: gl.Float = -1.0 + (boxX * scaleX) + (scaleX / 2);
-        var posY: gl.Float = 1.0 - (boxY * scaleY) - (scaleY / 2);
-        var transV = [_]gl.Float{
-            scaleX, scaleY,
-            posX,   posY,
-        };
-
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(seg.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return;
-        }
-
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((seg.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return;
-        }
-
+        try seg.draw(boxX, boxY);
         sdl.gl.swapWindow(window);
     }
 }
