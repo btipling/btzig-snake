@@ -3,7 +3,7 @@ const sdl = @import("zsdl");
 const gl = @import("zopengl");
 const matrix = @import("math/matrix.zig");
 const cfg = @import("config.zig");
-const segment = @import("segment.zig");
+const segment = @import("segment/segment.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -49,83 +49,6 @@ pub fn start() !void {
 
     var seg = try segment.Segment.init();
 
-    var vertexShaderSource: [:0]const u8 = @embedFile("shaders/segment.vs");
-    std.debug.print("vertexShaderSource: {s}\n", .{vertexShaderSource.ptr});
-    var vertexShader: gl.Uint = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShader, 1, &[_][*c]const u8{vertexShaderSource.ptr}, null);
-    gl.compileShader(vertexShader);
-    var success: gl.Int = 0;
-    gl.getShaderiv(vertexShader, gl.COMPILE_STATUS, &success);
-    if (success == 0) {
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getShaderInfoLog(vertexShader, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n{s}\n", .{infoLog[0..i]});
-        return;
-    } else {
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getShaderInfoLog(vertexShader, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("INFO::SHADER::VERTEX::LINKING_SUCCESS\n{s}\n", .{infoLog[0..i]});
-    }
-
-    var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/segment.fs");
-    std.debug.print("fragmentShaderSource: {s}\n", .{fragmentShaderSource.ptr});
-    var fragmentShader: gl.Uint = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, 1, &[_][*c]const u8{fragmentShaderSource.ptr}, null);
-    gl.compileShader(fragmentShader);
-    gl.getShaderiv(fragmentShader, gl.COMPILE_STATUS, &success);
-    if (success == 0) {
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getShaderInfoLog(fragmentShader, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{s}\n", .{infoLog[0..i]});
-        return;
-    } else {
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getShaderInfoLog(vertexShader, 512, logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("INFO::SHADER::FRAGMENT::LINKING_SUCCESS\n{s}\n", .{infoLog[0..i]});
-    }
-
-    var shaderProgram: gl.Uint = gl.createProgram();
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    var e = gl.getError();
-    if (e != gl.NO_ERROR) {
-        std.debug.print("error: {d}\n", .{e});
-        return;
-    }
-
-    gl.linkProgram(shaderProgram);
-    gl.getProgramiv(shaderProgram, gl.LINK_STATUS, &success);
-    if (success == 0) {
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getProgramInfoLog(shaderProgram, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("ERROR::SHADER::PROGRAM::LINKING_FAILED\n{s}\n", .{infoLog[0..i]});
-        return;
-    } else {
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getProgramInfoLog(shaderProgram, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("INFO::SHADER::PROGRAM::LINKING_SUCCESS {d}\n{s}\n", .{ i, infoLog[0..i] });
-    }
-    gl.deleteShader(vertexShader);
-    gl.deleteShader(fragmentShader);
-    e = gl.getError();
-    if (e != gl.NO_ERROR) {
-        std.debug.print("error: {d}\n", .{e});
-        return;
-    }
-    std.debug.print("program set up \n", .{});
-
     var speed = cfg.initial_speed;
     var boxX = cfg.initial_start_x;
     var boxY = cfg.initial_start_y;
@@ -164,8 +87,8 @@ pub fn start() !void {
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
 
-        gl.useProgram(shaderProgram);
-        e = gl.getError();
+        gl.useProgram(seg.shaderProgram);
+        var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return;
@@ -187,7 +110,7 @@ pub fn start() !void {
         };
 
         var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(shaderProgram, "transform");
+        const location = gl.getUniformLocation(seg.shaderProgram, "transform");
         gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
