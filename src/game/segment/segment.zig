@@ -1,6 +1,7 @@
 const std = @import("std");
 const matrix = @import("../math/matrix.zig");
 const gl = @import("zopengl");
+const glutils = @import("../gl/gl.zig");
 
 pub const SegmentErr = error{Error};
 
@@ -93,90 +94,16 @@ pub const Segment = struct {
 
     fn initVertexShader(_: Segment) !gl.Uint {
         var vertexShaderSource: [:0]const u8 = @embedFile("shaders/segment.vs");
-        std.debug.print("vertexShaderSource: {s}\n", .{vertexShaderSource.ptr});
-        var vertexShader: gl.Uint = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertexShader, 1, &[_][*c]const u8{vertexShaderSource.ptr}, null);
-        gl.compileShader(vertexShader);
-        var success: gl.Int = 0;
-        gl.getShaderiv(vertexShader, gl.COMPILE_STATUS, &success);
-        if (success == 0) {
-            var infoLog: [512]u8 = undefined;
-            var logSize: gl.Int = 0;
-            gl.getShaderInfoLog(vertexShader, 512, &logSize, &infoLog);
-            var i: usize = @intCast(logSize);
-            std.debug.print("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n{s}\n", .{infoLog[0..i]});
-            return SegmentErr.Error;
-        }
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getShaderInfoLog(vertexShader, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("INFO::SHADER::VERTEX::LINKING_SUCCESS\n{s}\n", .{infoLog[0..i]});
-
-        return vertexShader;
+        return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
     }
 
     fn initFragmentShader(_: Segment) !gl.Uint {
         var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/segment.fs");
-        std.debug.print("fragmentShaderSource: {s}\n", .{fragmentShaderSource.ptr});
-        var fragmentShader: gl.Uint = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragmentShader, 1, &[_][*c]const u8{fragmentShaderSource.ptr}, null);
-        gl.compileShader(fragmentShader);
-        var success: gl.Int = 0;
-        gl.getShaderiv(fragmentShader, gl.COMPILE_STATUS, &success);
-        if (success == 0) {
-            var infoLog: [512]u8 = undefined;
-            var logSize: gl.Int = 0;
-            gl.getShaderInfoLog(fragmentShader, 512, &logSize, &infoLog);
-            var i: usize = @intCast(logSize);
-            std.debug.print("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{s}\n", .{infoLog[0..i]});
-            return SegmentErr.Error;
-        }
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getShaderInfoLog(fragmentShader, 512, logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("INFO::SHADER::FRAGMENT::LINKING_SUCCESS\n{s}\n", .{infoLog[0..i]});
-
-        return fragmentShader;
+        return glutils.initShader("VERTEX", fragmentShaderSource, gl.FRAGMENT_SHADER);
     }
 
     fn initShaderProgram(self: Segment) !gl.Uint {
-        var shaderProgram: gl.Uint = gl.createProgram();
-        gl.attachShader(shaderProgram, self.vertexShader);
-        gl.attachShader(shaderProgram, self.fragmentShader);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-
-        gl.linkProgram(shaderProgram);
-        var success: gl.Int = 0;
-        gl.getProgramiv(shaderProgram, gl.LINK_STATUS, &success);
-        if (success == 0) {
-            var infoLog: [512]u8 = undefined;
-            var logSize: gl.Int = 0;
-            gl.getProgramInfoLog(shaderProgram, 512, &logSize, &infoLog);
-            var i: usize = @intCast(logSize);
-            std.debug.print("ERROR::SHADER::PROGRAM::LINKING_FAILED\n{s}\n", .{infoLog[0..i]});
-            return SegmentErr.Error;
-        }
-        var infoLog: [512]u8 = undefined;
-        var logSize: gl.Int = 0;
-        gl.getProgramInfoLog(shaderProgram, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
-        std.debug.print("INFO::SHADER::PROGRAM::LINKING_SUCCESS {d}\n{s}\n", .{ i, infoLog[0..i] });
-
-        gl.deleteShader(self.vertexShader);
-        gl.deleteShader(self.fragmentShader);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-        std.debug.print("program set up \n", .{});
-        return shaderProgram;
+        return glutils.initProgram("SEGMENT", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
     pub fn draw(self: Segment, posX: gl.Float, posY: gl.Float) !void {
