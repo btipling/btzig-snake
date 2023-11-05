@@ -6,8 +6,9 @@ const glutils = @import("../../gl/gl.zig");
 pub const FoodErr = error{Error};
 
 pub const Food = struct {
-    vertices: [8]gl.Float,
-    indices: [6]gl.Uint,
+    num_vertices: gl.Uint,
+    vertices: [202]gl.Float, // 2 * (num_vertices + 1) because we need to add the center point
+    indices: [299]gl.Uint, // 3 * (num_vertices - 1) because we need to add the center point
     VAO: gl.Uint,
     VBO: gl.Uint,
     EBO: gl.Uint,
@@ -17,16 +18,9 @@ pub const Food = struct {
 
     pub fn init() !Food {
         var rv = Food{
-            .vertices = [_]gl.Float{
-                0.5,  0.5,
-                0.5,  -0.5,
-                -0.5, -0.5,
-                -0.5, 0.5,
-            },
-            .indices = [_]gl.Uint{
-                0, 1, 3,
-                1, 2, 3,
-            },
+            .num_vertices = 100,
+            .vertices = undefined,
+            .indices = undefined,
             .VAO = undefined,
             .VBO = undefined,
             .EBO = undefined,
@@ -34,6 +28,20 @@ pub const Food = struct {
             .fragmentShader = undefined,
             .shaderProgram = undefined,
         };
+
+        rv.vertices[0] = 0.0;
+        rv.vertices[1] = 0.0;
+        for (0..rv.num_vertices + 1) |i| {
+            var angle = @as(gl.Float, @floatFromInt(i)) / @as(gl.Float, @floatFromInt(rv.num_vertices)) * 2 * 3.14159;
+            rv.vertices[i * 2] = @floatCast(@sin(angle));
+            rv.vertices[i * 2 + 1] = @floatCast(@cos(angle));
+        }
+        for (0..99) |i| {
+            rv.indices[i * 3] = 0;
+            rv.indices[i * 3 + 1] = @as(gl.Uint, @intCast(i + 1));
+            rv.indices[i * 3 + 2] = @as(gl.Uint, @intCast(i + 2));
+        }
+
         rv.VAO = try rv.initVAO();
         rv.VBO = try rv.initVBO();
         rv.EBO = try rv.initEBO();
