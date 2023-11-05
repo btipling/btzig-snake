@@ -111,7 +111,7 @@ pub const Food = struct {
     }
 
     fn initShaderProgram(self: Food) !gl.Uint {
-        return glutils.initProgram("SEGMENT", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
+        return glutils.initProgram("FOOD", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
     pub fn draw(self: Food, posX: gl.Float, posY: gl.Float) !void {
