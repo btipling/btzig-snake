@@ -133,8 +133,8 @@ pub const Food = struct {
         // let's make the food for the snake tiny
         var scaleX: gl.Float = 0.02;
         var scaleY: gl.Float = 0.02;
-        var transX: gl.Float = -0.5 + (posX * 0.25) + (0.25 / 2.0);
-        var transY: gl.Float = 0.5 - (posY * 0.25) - (0.25 / 2.0);
+        var transX: gl.Float = -1.0 + (posX * 0.025) + 0.025;
+        var transY: gl.Float = 1.0 - (posY * 0.025) - 0.025;
         var transV = [_]gl.Float{
             scaleX, scaleY,
             transX, transY,
