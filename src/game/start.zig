@@ -2,7 +2,8 @@ const std = @import("std");
 const sdl = @import("zsdl");
 const gl = @import("zopengl");
 const cfg = @import("config.zig");
-const segment = @import("segment/segment.zig");
+const segment = @import("object/segment/segment.zig");
+const food = @import("object/food/food.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -47,6 +48,7 @@ pub fn start() !void {
     }
 
     var seg = try segment.Segment.init();
+    var foodItem = try food.Food.init();
 
     var speed = cfg.initial_speed;
     var boxX = cfg.initial_start_x;
@@ -86,6 +88,7 @@ pub fn start() !void {
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
         try seg.draw(boxX, boxY);
+        try foodItem.draw(0, 0);
         sdl.gl.swapWindow(window);
     }
 }
