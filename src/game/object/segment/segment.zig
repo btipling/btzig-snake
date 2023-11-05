@@ -18,10 +18,10 @@ pub const Segment = struct {
     pub fn init() !Segment {
         var rv = Segment{
             .vertices = [_]gl.Float{
-                0.5,  0.5,
-                0.5,  -0.5,
-                -0.5, -0.5,
-                -0.5, 0.5,
+                1,  1,
+                1,  -1,
+                -1, -1,
+                -1, 1,
             },
             .indices = [_]gl.Uint{
                 0, 1, 3,
@@ -120,10 +120,10 @@ pub const Segment = struct {
             return SegmentErr.Error;
         }
 
-        var scaleX: gl.Float = 0.05;
-        var scaleY: gl.Float = 0.05;
-        var transX: gl.Float = -1.0 + (posX * scaleX) + (scaleX / 2);
-        var transY: gl.Float = 1.0 - (posY * scaleY) - (scaleY / 2);
+        var scaleX: gl.Float = 0.025;
+        var scaleY: gl.Float = 0.025;
+        var transX: gl.Float = -1.0 + (posX * scaleX) + scaleX;
+        var transY: gl.Float = 1.0 - (posY * scaleY) - scaleY;
         var transV = [_]gl.Float{
             scaleX, scaleY,
             transX, transY,

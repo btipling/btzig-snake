@@ -4,6 +4,7 @@ const gl = @import("zopengl");
 const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
 const food = @import("object/food/food.zig");
+const grid = @import("grid.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -49,11 +50,15 @@ pub fn start() !void {
 
     var seg = try segment.Segment.init();
     var foodItem = try food.Food.init();
+    var gameGrid = grid.Grid.init(cfg.grid_size);
+    var foodPos = gameGrid.randomGridPosition();
 
     var speed = cfg.initial_speed;
     var boxX = cfg.initial_start_x;
     var boxY = cfg.initial_start_y;
     main_loop: while (true) {
+        var posX: gl.Float = try gameGrid.indexToGridPosition(boxX);
+        var posY: gl.Float = try gameGrid.indexToGridPosition(boxY);
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
             if (event.type == .quit) {
@@ -72,23 +77,13 @@ pub fn start() !void {
                     .s => boxY += speed,
                     else => {},
                 }
-                if (boxX < 0) {
-                    boxX = 0.0;
-                }
-                if (boxY < 0) {
-                    boxY = 0.0;
-                }
-                if (boxX >= cfg.grid_size) {
-                    boxX = cfg.grid_size;
-                }
-                if (boxY >= cfg.grid_size) {
-                    boxY = cfg.grid_size;
-                }
+                boxX = gameGrid.constrainGridPosition(boxX);
+                boxY = gameGrid.constrainGridPosition(boxY);
             }
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-        try seg.draw(boxX, boxY);
-        try foodItem.draw(0, 0);
+        try seg.draw(posX, posY);
+        try foodItem.draw(foodPos[0], foodPos[1]);
         sdl.gl.swapWindow(window);
     }
 }
