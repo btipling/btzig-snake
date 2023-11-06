@@ -5,14 +5,10 @@ pub const GridErr = error{Error};
 
 pub const Grid = struct {
     size: gl.Float,
-    random: std.rand.Random,
 
     pub fn init(size: gl.Float) Grid {
-        var prng = std.rand.DefaultPrng.init(0);
-        const random = prng.random();
         return Grid{
             .size = size,
-            .random = random,
         };
     }
 
@@ -38,10 +34,12 @@ pub const Grid = struct {
         }
     }
 
-    pub fn randomGridPosition(self: Grid) [2]gl.Float {
+    pub fn randomGridPosition(self: Grid, seed: u32) [2]gl.Float {
+        var prng = std.rand.DefaultPrng.init(seed);
+        const random = prng.random();
         const max = @as(u32, @intFromFloat(self.size));
-        const x = @as(gl.Float, @floatFromInt(self.random.uintAtMost(u32, max)));
-        const y = @as(gl.Float, @floatFromInt(self.random.uintAtMost(u32, max)));
+        const x = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
+        const y = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
         std.debug.print("x: {d}, y: {d}\n", .{ x, y });
         return [_]gl.Float{ self.constrainGridPosition(x), self.constrainGridPosition(y) };
     }
