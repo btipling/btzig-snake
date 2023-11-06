@@ -5,6 +5,7 @@ const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
 const food = @import("object/food/food.zig");
 const grid = @import("grid.zig");
+const state = @import("state.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -51,14 +52,13 @@ pub fn start() !void {
     var seg = try segment.Segment.init();
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
-    var foodPos = gameGrid.randomGridPosition();
+    var gameState = state.State.init(gameGrid, cfg.initial_start_x, cfg.initial_start_y);
+    state.State.generateFoodPosition(&gameState);
 
     var speed = cfg.initial_speed;
-    var boxX = cfg.initial_start_x;
-    var boxY = cfg.initial_start_y;
     main_loop: while (true) {
-        var posX: gl.Float = try gameGrid.indexToGridPosition(boxX);
-        var posY: gl.Float = try gameGrid.indexToGridPosition(boxY);
+        var posX: gl.Float = try gameGrid.indexToGridPosition(gameState.headX);
+        var posY: gl.Float = try gameGrid.indexToGridPosition(gameState.headY);
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
             if (event.type == .quit) {
@@ -67,23 +67,37 @@ pub fn start() !void {
                 switch (event.key.keysym.sym) {
                     .q => break :main_loop,
                     .escape => break :main_loop,
-                    .left => boxX -= speed,
-                    .a => boxX -= speed,
-                    .right => boxX += speed,
-                    .d => boxX += speed,
-                    .up => boxY -= speed,
-                    .w => boxY -= speed,
-                    .down => boxY += speed,
-                    .s => boxY += speed,
+                    .left => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX - speed, gameState.headY);
+                    },
+                    .a => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX - speed, gameState.headY);
+                    },
+                    .right => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX + speed, gameState.headY);
+                    },
+                    .d => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX + speed, gameState.headY);
+                    },
+                    .up => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX, gameState.headY - speed);
+                    },
+                    .w => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX, gameState.headY - speed);
+                    },
+                    .down => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX, gameState.headY + speed);
+                    },
+                    .s => {
+                        state.State.updateHeadPosition(&gameState, gameState.headX, gameState.headY + speed);
+                    },
                     else => {},
                 }
-                boxX = gameGrid.constrainGridPosition(boxX);
-                boxY = gameGrid.constrainGridPosition(boxY);
             }
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
         try seg.draw(posX, posY);
-        try foodItem.draw(foodPos[0], foodPos[1]);
+        try foodItem.draw(gameState.foodX, gameState.foodY);
         sdl.gl.swapWindow(window);
     }
 }
