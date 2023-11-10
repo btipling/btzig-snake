@@ -6,6 +6,7 @@ const segment = @import("object/segment/segment.zig");
 const food = @import("object/food/food.zig");
 const grid = @import("grid.zig");
 const state = @import("state.zig");
+const controls = @import("controls.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -57,45 +58,18 @@ pub fn start() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var gameState = try state.State.init(gameGrid, cfg.initial_start_x, cfg.initial_start_y, allocator);
+    var gameState = try state.State.init(gameGrid, cfg.initial_speed, cfg.initial_start_x, cfg.initial_start_y, allocator);
     state.State.generateFoodPosition(&gameState);
 
-    var speed = cfg.initial_speed;
     main_loop: while (true) {
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
             if (event.type == .quit) {
                 break :main_loop;
             } else if (event.type == .keydown) {
-                const eventHead = state.State.getHeadPosition(&gameState);
-                switch (event.key.keysym.sym) {
-                    .q => break :main_loop,
-                    .escape => break :main_loop,
-                    .left => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x - speed, eventHead.y);
-                    },
-                    .a => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x - speed, eventHead.y);
-                    },
-                    .right => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x + speed, eventHead.y);
-                    },
-                    .d => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x + speed, eventHead.y);
-                    },
-                    .up => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y - speed);
-                    },
-                    .w => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y - speed);
-                    },
-                    .down => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y + speed);
-                    },
-                    .s => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y + speed);
-                    },
-                    else => {},
+                const quit = try controls.handleKey(&gameState, event.key.keysym.sym);
+                if (quit) {
+                    break :main_loop;
                 }
             }
         }
