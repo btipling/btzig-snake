@@ -6,6 +6,7 @@ const segment = @import("object/segment/segment.zig");
 const food = @import("object/food/food.zig");
 const grid = @import("grid.zig");
 const state = @import("state.zig");
+const controls = @import("controls.zig");
 
 pub fn start() !void {
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
@@ -66,34 +67,9 @@ pub fn start() !void {
             if (event.type == .quit) {
                 break :main_loop;
             } else if (event.type == .keydown) {
-                switch (event.key.keysym.sym) {
-                    .q => break :main_loop,
-                    .escape => break :main_loop,
-                    .left => {
-                        try state.State.moveLeft(&gameState);
-                    },
-                    .a => {
-                        try state.State.moveLeft(&gameState);
-                    },
-                    .right => {
-                        try state.State.moveRight(&gameState);
-                    },
-                    .d => {
-                        try state.State.moveRight(&gameState);
-                    },
-                    .up => {
-                        try state.State.moveUp(&gameState);
-                    },
-                    .w => {
-                        try state.State.moveUp(&gameState);
-                    },
-                    .down => {
-                        try state.State.moveDown(&gameState);
-                    },
-                    .s => {
-                        try state.State.moveDown(&gameState);
-                    },
-                    else => {},
+                const quit = try controls.handleKey(&gameState, event.key.keysym.sym);
+                if (quit) {
+                    break :main_loop;
                 }
             }
         }
