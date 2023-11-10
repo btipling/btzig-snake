@@ -96,8 +96,8 @@ pub fn start() !void {
             }
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-        try seg.draw(posX, posY);
-        try foodItem.draw(gameState.foodX, gameState.foodY);
+        try seg.draw(posX, posY, gameState.grid.scaleFactor);
+        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid.scaleFactor);
         sdl.gl.swapWindow(window);
     }
 }

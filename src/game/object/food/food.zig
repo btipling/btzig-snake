@@ -114,7 +114,7 @@ pub const Food = struct {
         return glutils.initProgram("FOOD", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
-    pub fn draw(self: Food, posX: gl.Float, posY: gl.Float) !void {
+    pub fn draw(self: Food, posX: gl.Float, posY: gl.Float, scaleFactor: gl.Float) !void {
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -128,13 +128,11 @@ pub const Food = struct {
             return FoodErr.Error;
         }
 
-        // var scaleX: gl.Float = 1;
-        // var scaleY: gl.Float = 1;
         // let's make the food for the snake tiny
-        var scaleX: gl.Float = 0.02;
-        var scaleY: gl.Float = 0.02;
-        var transX: gl.Float = -1.0 + (posX * 0.025) + 0.025;
-        var transY: gl.Float = 1.0 - (posY * 0.025) - 0.025;
+        var scaleX: gl.Float = scaleFactor * 0.75;
+        var scaleY: gl.Float = scaleFactor * 0.75;
+        var transX: gl.Float = -1.0 + (posX * scaleFactor * 2) + scaleFactor;
+        var transY: gl.Float = 1.0 - (posY * scaleFactor * 2) - scaleFactor;
         var transV = [_]gl.Float{
             scaleX, scaleY,
             transX, transY,

@@ -9,6 +9,7 @@ pub const State = struct {
     foodX: gl.Float,
     foodY: gl.Float,
     grid: grid.Grid,
+
     pub fn init(gameGrid: grid.Grid, startX: gl.Float, startY: gl.Float) State {
         return State{
             .score = 0,
@@ -19,11 +20,13 @@ pub const State = struct {
             .grid = gameGrid,
         };
     }
+
     pub fn generateFoodPosition(self: *State) void {
         var foodPos = self.grid.randomGridPosition(self.score);
         self.foodX = foodPos[0];
         self.foodY = foodPos[1];
     }
+
     pub fn updateHeadPosition(self: *State, x: gl.Float, y: gl.Float) void {
         self.headX = self.grid.constrainGridPosition(x);
         self.headY = self.grid.constrainGridPosition(y);
