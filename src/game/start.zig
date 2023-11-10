@@ -57,43 +57,41 @@ pub fn start() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var gameState = try state.State.init(gameGrid, cfg.initial_start_x, cfg.initial_start_y, allocator);
+    var gameState = try state.State.init(gameGrid, cfg.initial_speed, cfg.initial_start_x, cfg.initial_start_y, allocator);
     state.State.generateFoodPosition(&gameState);
 
-    var speed = cfg.initial_speed;
     main_loop: while (true) {
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
             if (event.type == .quit) {
                 break :main_loop;
             } else if (event.type == .keydown) {
-                const eventHead = state.State.getHeadPosition(&gameState);
                 switch (event.key.keysym.sym) {
                     .q => break :main_loop,
                     .escape => break :main_loop,
                     .left => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x - speed, eventHead.y);
+                        try state.State.moveLeft(&gameState);
                     },
                     .a => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x - speed, eventHead.y);
+                        try state.State.moveLeft(&gameState);
                     },
                     .right => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x + speed, eventHead.y);
+                        try state.State.moveRight(&gameState);
                     },
                     .d => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x + speed, eventHead.y);
+                        try state.State.moveRight(&gameState);
                     },
                     .up => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y - speed);
+                        try state.State.moveUp(&gameState);
                     },
                     .w => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y - speed);
+                        try state.State.moveUp(&gameState);
                     },
                     .down => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y + speed);
+                        try state.State.moveDown(&gameState);
                     },
                     .s => {
-                        try state.State.updateHeadPosition(&gameState, eventHead.x, eventHead.y + speed);
+                        try state.State.moveDown(&gameState);
                     },
                     else => {},
                 }

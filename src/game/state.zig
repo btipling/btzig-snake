@@ -9,16 +9,18 @@ pub const coordinate = struct {
 
 pub const State = struct {
     score: u32,
+    speed: gl.Float,
     foodX: gl.Float,
     foodY: gl.Float,
     grid: grid.Grid,
     segments: std.ArrayList(coordinate),
 
-    pub fn init(gameGrid: grid.Grid, startX: gl.Float, startY: gl.Float, allocator: std.mem.Allocator) !State {
+    pub fn init(gameGrid: grid.Grid, initialSpeed: gl.Float, startX: gl.Float, startY: gl.Float, allocator: std.mem.Allocator) !State {
         var segments = std.ArrayList(coordinate).init(allocator);
         try segments.append(coordinate{ .x = startX, .y = startY });
         return State{
             .score = 0,
+            .speed = initialSpeed,
             .foodX = 0.0,
             .foodY = 0.0,
             .grid = gameGrid,
@@ -59,5 +61,25 @@ pub const State = struct {
         if (addone) {
             try self.segments.append(coordinate{ .x = prevX, .y = prevY });
         }
+    }
+
+    pub fn moveLeft(self: *State) !void {
+        const head = self.getHeadPosition();
+        try self.updateHeadPosition(head.x - self.speed, head.y);
+    }
+
+    pub fn moveRight(self: *State) !void {
+        const head = self.getHeadPosition();
+        try self.updateHeadPosition(head.x + self.speed, head.y);
+    }
+
+    pub fn moveUp(self: *State) !void {
+        const head = self.getHeadPosition();
+        try self.updateHeadPosition(head.x, head.y - self.speed);
+    }
+
+    pub fn moveDown(self: *State) !void {
+        const head = self.getHeadPosition();
+        try self.updateHeadPosition(head.x, head.y + self.speed);
     }
 };
