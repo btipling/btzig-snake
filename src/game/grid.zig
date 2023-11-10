@@ -36,8 +36,8 @@ pub const Grid = struct {
         }
     }
 
-    pub fn randomGridPosition(self: Grid, seed: u32) [2]gl.Float {
-        var prng = std.rand.DefaultPrng.init(seed);
+    pub fn randomGridPosition(self: Grid, i: u32) [2]gl.Float {
+        var prng = std.rand.DefaultPrng.init(@as(u64, @intCast(i)) + @as(u64, @intCast(std.time.milliTimestamp())));
         const random = prng.random();
         const max = @as(u32, @intFromFloat(self.size));
         const x = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
