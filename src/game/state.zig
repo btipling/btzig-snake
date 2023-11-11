@@ -105,7 +105,6 @@ pub const State = struct {
         State.generateFoodPosition(self);
     }
 
-    // detect collision
     pub fn detectCollision(self: *State) bool {
         const head = self.getHeadPosition();
         if (head.x < 0.0 or head.x >= self.grid.size or head.y < 0.0 or head.y >= self.grid.size) {
