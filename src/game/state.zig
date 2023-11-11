@@ -15,6 +15,7 @@ const Direction = enum(i32) {
 };
 
 pub const State = struct {
+    initialStart: coordinate,
     score: u32,
     speed: gl.Float,
     delay: gl.Uint,
@@ -36,6 +37,7 @@ pub const State = struct {
         var segments = std.ArrayList(coordinate).init(allocator);
         try segments.append(coordinate{ .x = startX, .y = startY });
         return State{
+            .initialStart = coordinate{ .x = startX, .y = startY },
             .score = 0,
             .speed = initialSpeed,
             .paused = false,
@@ -59,8 +61,12 @@ pub const State = struct {
     }
 
     pub fn updateHeadPosition(self: *State, x: gl.Float, y: gl.Float) !void {
-        var newX = self.grid.constrainGridPosition(x);
-        var newY = self.grid.constrainGridPosition(y);
+        var newX = x;
+        var newY = y;
+        var head = self.getHeadPosition();
+        if (newX == head.x and newY == head.y) {
+            return;
+        }
         var addone = false;
         if (newX == self.foodX and newY == self.foodY) {
             const newScore = self.score + 1;
@@ -83,6 +89,45 @@ pub const State = struct {
         if (addone) {
             try self.segments.append(coordinate{ .x = prevX, .y = prevY });
         }
+        if (self.detectCollision()) {
+            try self.resetGame();
+        }
+    }
+
+    pub fn resetGame(self: *State) !void {
+        std.debug.print("Game Over!\n", .{});
+        self.score = 0;
+        self.speed = 1;
+        self.delay = 1000;
+        self.paused = false;
+        self.segments.clearAndFree();
+        try self.segments.append(coordinate{ .x = self.initialStart.x, .y = self.initialStart.y });
+        State.generateFoodPosition(self);
+    }
+
+    // detect collision
+    pub fn detectCollision(self: *State) bool {
+        const head = self.getHeadPosition();
+        if (head.x < 0.0 or head.x >= self.grid.size or head.y < 0.0 or head.y >= self.grid.size) {
+            std.debug.print("Out of bounds!\n", .{});
+            return true;
+        }
+        if (self.segments.items.len == 1) {
+            return false;
+        }
+        for (self.segments.items, 0..) |coord, i| {
+            if (i == 0) {
+                continue;
+            }
+            if (head.x == coord.x and head.y == coord.y) {
+                std.debug.print(
+                    "Collision between head and segment {d} - head (x: {d}, y: {d}), seg: (x: {d}, y: {d})!\n",
+                    .{ i, head.x, head.y, coord.x, coord.y },
+                );
+                return true;
+            }
+        }
+        return false;
     }
 
     // pause
