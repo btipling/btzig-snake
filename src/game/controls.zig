@@ -41,6 +41,9 @@ pub fn handleKey(gameState: *state.State, keyCode: sdl.Keycode) !bool {
         .j => {
             try state.State.goDown(gameState);
         },
+        .p => {
+            state.State.togglePause(gameState);
+        },
         else => {},
     }
     return false;

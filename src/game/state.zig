@@ -18,6 +18,7 @@ pub const State = struct {
     score: u32,
     speed: gl.Float,
     delay: gl.Uint,
+    paused: bool,
     direction: Direction,
     foodX: gl.Float,
     foodY: gl.Float,
@@ -37,6 +38,7 @@ pub const State = struct {
         return State{
             .score = 0,
             .speed = initialSpeed,
+            .paused = false,
             .direction = Direction.Right,
             .delay = initialDelay,
             .foodX = 0.0,
@@ -64,8 +66,10 @@ pub const State = struct {
             const newScore = self.score + 1;
             self.score = newScore;
             State.generateFoodPosition(self);
-            std.debug.print("Score: {d}\n", .{newScore});
             addone = true;
+            // decrease delay exponentially
+            self.delay = @as(gl.Uint, @intFromFloat(@as(gl.Float, @floatFromInt(self.delay)) * 0.9));
+            std.debug.print("Score: {d} Delay: {d}\n", .{ newScore, self.delay });
         }
         var prevX: gl.Float = 0.0;
         var prevY: gl.Float = 0.0;
@@ -79,6 +83,12 @@ pub const State = struct {
         if (addone) {
             try self.segments.append(coordinate{ .x = prevX, .y = prevY });
         }
+    }
+
+    // pause
+
+    pub fn togglePause(self: *State) void {
+        self.paused = !self.paused;
     }
 
     // direction
@@ -138,6 +148,9 @@ pub const State = struct {
     }
 
     pub fn move(self: *State) !void {
+        if (self.paused) {
+            return;
+        }
         switch (self.direction) {
             Direction.Left => try self.moveLeft(),
             Direction.Right => try self.moveRight(),

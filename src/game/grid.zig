@@ -42,7 +42,7 @@ pub const Grid = struct {
         const max = @as(u32, @intFromFloat(self.size));
         const x = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
         const y = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
-        std.debug.print("x: {d}, y: {d}\n", .{ x, y });
+        std.debug.print("Food moved to x: {d}, y: {d}\n", .{ x, y });
         return [_]gl.Float{ self.constrainGridPosition(x), self.constrainGridPosition(y) };
     }
 };
