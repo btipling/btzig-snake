@@ -21,11 +21,13 @@ pub const Background = struct {
         std.debug.print("init background\n", .{});
         var rv = Background{
             .vertices = [_]gl.Float{
-                //pos   //tex
-                1,  1,  1, 1,
-                1,  -1, 1, 0,
-                -1, -1, 0, 0,
-                -1, 1,  0, 1,
+                // zig fmt: off
+                // positions   // texture coords
+                1,  1,          1, 1,
+                1,  -1,         1, 0,
+                -1, -1,         0, 0,
+                -1, 1,          0, 1,
+                // zig fmt: on
             },
             .indices = [_]gl.Uint{
                 0, 1, 3,
