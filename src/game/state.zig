@@ -7,20 +7,40 @@ pub const coordinate = struct {
     y: gl.Float,
 };
 
+const Direction = enum(i32) {
+    Left,
+    Right,
+    Up,
+    Down,
+};
+
 pub const State = struct {
     score: u32,
     speed: gl.Float,
+    delay: gl.Uint,
+    paused: bool,
+    direction: Direction,
     foodX: gl.Float,
     foodY: gl.Float,
     grid: grid.Grid,
     segments: std.ArrayList(coordinate),
 
-    pub fn init(gameGrid: grid.Grid, initialSpeed: gl.Float, startX: gl.Float, startY: gl.Float, allocator: std.mem.Allocator) !State {
+    pub fn init(
+        gameGrid: grid.Grid,
+        initialSpeed: gl.Float,
+        initialDelay: gl.Uint,
+        startX: gl.Float,
+        startY: gl.Float,
+        allocator: std.mem.Allocator,
+    ) !State {
         var segments = std.ArrayList(coordinate).init(allocator);
         try segments.append(coordinate{ .x = startX, .y = startY });
         return State{
             .score = 0,
             .speed = initialSpeed,
+            .paused = false,
+            .direction = Direction.Right,
+            .delay = initialDelay,
             .foodX = 0.0,
             .foodY = 0.0,
             .grid = gameGrid,
@@ -46,8 +66,10 @@ pub const State = struct {
             const newScore = self.score + 1;
             self.score = newScore;
             State.generateFoodPosition(self);
-            std.debug.print("Score: {d}\n", .{newScore});
             addone = true;
+            // decrease delay exponentially
+            self.delay = @as(gl.Uint, @intFromFloat(@as(gl.Float, @floatFromInt(self.delay)) * 0.9));
+            std.debug.print("Score: {d} Delay: {d}\n", .{ newScore, self.delay });
         }
         var prevX: gl.Float = 0.0;
         var prevY: gl.Float = 0.0;
@@ -62,6 +84,48 @@ pub const State = struct {
             try self.segments.append(coordinate{ .x = prevX, .y = prevY });
         }
     }
+
+    // pause
+
+    pub fn togglePause(self: *State) void {
+        self.paused = !self.paused;
+    }
+
+    // direction
+
+    pub fn goLeft(self: *State) !void {
+        if (self.direction == Direction.Right) {
+            return;
+        }
+        self.direction = Direction.Left;
+        return self.move();
+    }
+
+    pub fn goRight(self: *State) !void {
+        if (self.direction == Direction.Left) {
+            return;
+        }
+        self.direction = Direction.Right;
+        return self.move();
+    }
+
+    pub fn goUp(self: *State) !void {
+        if (self.direction == Direction.Down) {
+            return;
+        }
+        self.direction = Direction.Up;
+        return self.move();
+    }
+
+    pub fn goDown(self: *State) !void {
+        if (self.direction == Direction.Up) {
+            return;
+        }
+        self.direction = Direction.Down;
+        return self.move();
+    }
+
+    // movement
 
     pub fn moveLeft(self: *State) !void {
         const head = self.getHeadPosition();
@@ -81,5 +145,17 @@ pub const State = struct {
     pub fn moveDown(self: *State) !void {
         const head = self.getHeadPosition();
         try self.updateHeadPosition(head.x, head.y + self.speed);
+    }
+
+    pub fn move(self: *State) !void {
+        if (self.paused) {
+            return;
+        }
+        switch (self.direction) {
+            Direction.Left => try self.moveLeft(),
+            Direction.Right => try self.moveRight(),
+            Direction.Up => try self.moveUp(),
+            Direction.Down => try self.moveDown(),
+        }
     }
 };
