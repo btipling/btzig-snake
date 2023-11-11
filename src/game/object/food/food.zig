@@ -107,7 +107,7 @@ pub const Food = struct {
 
     fn initFragmentShader(_: Food) !gl.Uint {
         var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/food.fs");
-        return glutils.initShader("VERTEX", fragmentShaderSource, gl.FRAGMENT_SHADER);
+        return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
     }
 
     fn initShaderProgram(self: Food) !gl.Uint {
