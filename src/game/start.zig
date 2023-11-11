@@ -4,6 +4,7 @@ const gl = @import("zopengl");
 const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
 const food = @import("object/food/food.zig");
+const background = @import("object/background/background.zig");
 const grid = @import("grid.zig");
 const state = @import("state.zig");
 const controls = @import("controls.zig");
@@ -50,13 +51,14 @@ pub fn start() !void {
         std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
     }
 
-    var seg = try segment.Segment.init();
-    var foodItem = try food.Food.init();
-    var gameGrid = grid.Grid.init(cfg.grid_size);
-
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+
+    var seg = try segment.Segment.init();
+    var foodItem = try food.Food.init();
+    var gameGrid = grid.Grid.init(cfg.grid_size);
+    var bg = try background.Background.init(allocator);
 
     var gameState = try state.State.init(
         gameGrid,
@@ -85,6 +87,7 @@ pub fn start() !void {
             lastTick = std.time.milliTimestamp();
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
+        try bg.draw(0, 0, 1);
         for (gameState.segments.items) |coords| {
             var posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
             var posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);

@@ -1,6 +1,7 @@
 const std = @import("std");
 const zsdl = @import("libs/zig-gamedev/libs/zsdl/build.zig");
 const zopengl = @import("libs/zig-gamedev/libs/zopengl/build.zig");
+const zstbi = @import("libs/zig-gamedev/libs/zstbi/build.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -25,9 +26,11 @@ pub fn build(b: *std.Build) void {
 
     const zsdl_pkg = zsdl.package(b, target, optimize, .{});
     const zopengl_pkg = zopengl.package(b, target, optimize, .{});
+    const zstbi_pkg = zstbi.package(b, target, optimize, .{});
 
     zsdl_pkg.link(exe);
     zopengl_pkg.link(exe);
+    zstbi_pkg.link(exe);
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
