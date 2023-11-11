@@ -7,20 +7,38 @@ pub const coordinate = struct {
     y: gl.Float,
 };
 
+const Direction = enum(i32) {
+    Left,
+    Right,
+    Up,
+    Down,
+};
+
 pub const State = struct {
     score: u32,
     speed: gl.Float,
+    delay: gl.Uint,
+    direction: Direction,
     foodX: gl.Float,
     foodY: gl.Float,
     grid: grid.Grid,
     segments: std.ArrayList(coordinate),
 
-    pub fn init(gameGrid: grid.Grid, initialSpeed: gl.Float, startX: gl.Float, startY: gl.Float, allocator: std.mem.Allocator) !State {
+    pub fn init(
+        gameGrid: grid.Grid,
+        initialSpeed: gl.Float,
+        initialDelay: gl.Uint,
+        startX: gl.Float,
+        startY: gl.Float,
+        allocator: std.mem.Allocator,
+    ) !State {
         var segments = std.ArrayList(coordinate).init(allocator);
         try segments.append(coordinate{ .x = startX, .y = startY });
         return State{
             .score = 0,
             .speed = initialSpeed,
+            .direction = Direction.Right,
+            .delay = initialDelay,
             .foodX = 0.0,
             .foodY = 0.0,
             .grid = gameGrid,
@@ -63,6 +81,42 @@ pub const State = struct {
         }
     }
 
+    // direction
+
+    pub fn goLeft(self: *State) !void {
+        if (self.direction == Direction.Right) {
+            return;
+        }
+        self.direction = Direction.Left;
+        return self.move();
+    }
+
+    pub fn goRight(self: *State) !void {
+        if (self.direction == Direction.Left) {
+            return;
+        }
+        self.direction = Direction.Right;
+        return self.move();
+    }
+
+    pub fn goUp(self: *State) !void {
+        if (self.direction == Direction.Down) {
+            return;
+        }
+        self.direction = Direction.Up;
+        return self.move();
+    }
+
+    pub fn goDown(self: *State) !void {
+        if (self.direction == Direction.Up) {
+            return;
+        }
+        self.direction = Direction.Down;
+        return self.move();
+    }
+
+    // movement
+
     pub fn moveLeft(self: *State) !void {
         const head = self.getHeadPosition();
         try self.updateHeadPosition(head.x - self.speed, head.y);
@@ -81,5 +135,14 @@ pub const State = struct {
     pub fn moveDown(self: *State) !void {
         const head = self.getHeadPosition();
         try self.updateHeadPosition(head.x, head.y + self.speed);
+    }
+
+    pub fn move(self: *State) !void {
+        switch (self.direction) {
+            Direction.Left => try self.moveLeft(),
+            Direction.Right => try self.moveRight(),
+            Direction.Up => try self.moveUp(),
+            Direction.Down => try self.moveDown(),
+        }
     }
 };

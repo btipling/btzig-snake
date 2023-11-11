@@ -58,9 +58,16 @@ pub fn start() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var gameState = try state.State.init(gameGrid, cfg.initial_speed, cfg.initial_start_x, cfg.initial_start_y, allocator);
+    var gameState = try state.State.init(
+        gameGrid,
+        cfg.initial_speed,
+        cfg.initial_delay,
+        cfg.initial_start_x,
+        cfg.initial_start_y,
+        allocator,
+    );
     state.State.generateFoodPosition(&gameState);
-
+    var lastTick = std.time.milliTimestamp();
     main_loop: while (true) {
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
@@ -72,6 +79,10 @@ pub fn start() !void {
                     break :main_loop;
                 }
             }
+        }
+        if (std.time.milliTimestamp() - lastTick > gameState.delay) {
+            try state.State.move(&gameState);
+            lastTick = std.time.milliTimestamp();
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
         for (gameState.segments.items) |coords| {
