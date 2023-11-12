@@ -18,7 +18,7 @@ pub const Background = struct {
     shaderProgram: gl.Uint,
     gridSize: gl.Float,
 
-    pub fn init(alloc: std.mem.Allocator, gridSize: gl.Float) !Background {
+    pub fn init(gridSize: gl.Float) !Background {
         std.debug.print("init background\n", .{});
         var rv = Background{
             .vertices = [_]gl.Float{
@@ -46,7 +46,7 @@ pub const Background = struct {
         rv.VAO = try rv.initVAO();
         rv.VBO = try rv.initVBO();
         rv.EBO = try rv.initEBO();
-        rv.texture = try rv.initTexture(alloc);
+        rv.texture = try rv.initTexture();
         rv.vertexShader = try rv.initVertexShader();
         rv.fragmentShader = try rv.initFragmentShader();
         rv.shaderProgram = try rv.initShaderProgram();
@@ -91,7 +91,7 @@ pub const Background = struct {
         return EBO;
     }
 
-    fn initTexture(self: Background, alloc: std.mem.Allocator) !gl.Uint {
+    fn initTexture(self: Background) !gl.Uint {
         _ = self;
         var texture: gl.Uint = undefined;
         var e: gl.Uint = 0;
@@ -102,9 +102,6 @@ pub const Background = struct {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        zstbi.init(alloc);
-        defer zstbi.deinit();
 
         var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/grass.png");
         var image = try zstbi.Image.loadFromMemory(grassBytes, 4);

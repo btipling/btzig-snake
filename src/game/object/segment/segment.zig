@@ -1,16 +1,18 @@
 const std = @import("std");
-const matrix = @import("../../math/matrix.zig");
 const gl = @import("zopengl");
+const zstbi = @import("zstbi");
+const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
 
 pub const SegmentErr = error{Error};
 
 pub const Segment = struct {
-    vertices: [8]gl.Float,
+    vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
     VBO: gl.Uint,
     EBO: gl.Uint,
+    texture: gl.Uint,
     vertexShader: gl.Uint,
     fragmentShader: gl.Uint,
     shaderProgram: gl.Uint,
@@ -18,10 +20,13 @@ pub const Segment = struct {
     pub fn init() !Segment {
         var rv = Segment{
             .vertices = [_]gl.Float{
-                1,  1,
-                1,  -1,
-                -1, -1,
-                -1, 1,
+                // zig fmt: off
+                // positions   // texture coords
+                1,  1,          1, 1,
+                1,  -1,         1, 0,
+                -1, -1,         0, 0,
+                -1, 1,          0, 1,
+                // zig fmt: on
             },
             .indices = [_]gl.Uint{
                 0, 1, 3,
@@ -30,6 +35,7 @@ pub const Segment = struct {
             .VAO = undefined,
             .VBO = undefined,
             .EBO = undefined,
+            .texture = undefined,
             .vertexShader = undefined,
             .fragmentShader = undefined,
             .shaderProgram = undefined,
@@ -37,6 +43,7 @@ pub const Segment = struct {
         rv.VAO = try rv.initVAO();
         rv.VBO = try rv.initVBO();
         rv.EBO = try rv.initEBO();
+        rv.texture = try rv.initTexture();
         rv.vertexShader = try rv.initVertexShader();
         rv.fragmentShader = try rv.initFragmentShader();
         rv.shaderProgram = try rv.initShaderProgram();
@@ -81,11 +88,53 @@ pub const Segment = struct {
         return EBO;
     }
 
+    fn initTexture(self: Segment) !gl.Uint {
+        _ = self;
+        var texture: gl.Uint = undefined;
+        var e: gl.Uint = 0;
+        gl.genTextures(1, &texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake.png");
+        var image = try zstbi.Image.loadFromMemory(grassBytes, 4);
+        defer image.deinit();
+        std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
+
+        const width: gl.Int = @as(gl.Int, @intCast(image.width));
+        const height: gl.Int = @as(gl.Int, @intCast(image.height));
+        const imageData: *const anyopaque = image.data.ptr;
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, imageData);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+        gl.generateMipmap(gl.TEXTURE_2D);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+        return texture;
+    }
+
     fn initData(self: Segment) !void {
         gl.bufferData(gl.ARRAY_BUFFER, self.vertices.len * @sizeOf(gl.Float), &self.vertices, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(gl.Float), null);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 4 * @sizeOf(gl.Float), null);
         gl.enableVertexAttribArray(0);
         var e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+        gl.vertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 4 * @sizeOf(gl.Float), @as(*anyopaque, @ptrFromInt(2 * @sizeOf(gl.Float))));
+        gl.enableVertexAttribArray(1);
+        e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return SegmentErr.Error;
@@ -113,6 +162,13 @@ pub const Segment = struct {
             std.debug.print("error: {d}\n", .{e});
             return SegmentErr.Error;
         }
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, self.texture);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("bind texture error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
         gl.bindVertexArray(self.VAO);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -133,6 +189,14 @@ pub const Segment = struct {
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");
         gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return SegmentErr.Error;
+        }
+
+        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
+        gl.uniform1i(textureLoc, 0);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});

@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdl = @import("zsdl");
 const gl = @import("zopengl");
+const zstbi = @import("zstbi");
 const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
 const food = @import("object/food/food.zig");
@@ -55,10 +56,13 @@ pub fn start() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
+    zstbi.init(allocator);
+    defer zstbi.deinit();
+
     var seg = try segment.Segment.init();
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
-    var bg = try background.Background.init(allocator, gameGrid.size);
+    var bg = try background.Background.init(gameGrid.size);
 
     var gameState = try state.State.init(
         gameGrid,
