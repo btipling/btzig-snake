@@ -16,8 +16,9 @@ pub const Background = struct {
     vertexShader: gl.Uint,
     fragmentShader: gl.Uint,
     shaderProgram: gl.Uint,
+    gridSize: gl.Float,
 
-    pub fn init(alloc: std.mem.Allocator) !Background {
+    pub fn init(alloc: std.mem.Allocator, gridSize: gl.Float) !Background {
         std.debug.print("init background\n", .{});
         var rv = Background{
             .vertices = [_]gl.Float{
@@ -40,6 +41,7 @@ pub const Background = struct {
             .vertexShader = undefined,
             .fragmentShader = undefined,
             .shaderProgram = undefined,
+            .gridSize = gridSize,
         };
         rv.VAO = try rv.initVAO();
         rv.VBO = try rv.initVBO();
@@ -155,6 +157,8 @@ pub const Background = struct {
     }
 
     pub fn draw(self: Background, posX: gl.Float, posY: gl.Float, scaleFactor: gl.Float) !void {
+        _ = posY;
+        _ = posX;
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -175,37 +179,48 @@ pub const Background = struct {
             return BackgroundErr.Error;
         }
 
-        // let's make the food for the snake tiny
-        var scaleX: gl.Float = scaleFactor;
-        var scaleY: gl.Float = scaleFactor;
-        var transX: gl.Float = -1.0 + (posX * scaleFactor * 2) + scaleFactor;
-        var transY: gl.Float = 1.0 - (posY * scaleFactor * 2) - scaleFactor;
-        var transV = [_]gl.Float{
-            scaleX, scaleY,
-            transX, transY,
-        };
+        // tile the background in rows and columns by taking a fration of the gridSize as number of rows and columns
+        var tileCountDivisor: gl.Float = 10.0;
+        var numTiles: usize = @as(usize, @intFromFloat(self.gridSize/tileCountDivisor));
+        // update the scaleFactor to be the size of grid
+        var tileScaleFactor: gl.Float = scaleFactor / self.gridSize * tileCountDivisor;
+        // loop through the rows and columns and draw the background
+        for (0..numTiles) |i| {
+            for (0..numTiles) |j| {
+                const tileX: gl.Float =@as(gl.Float, @floatFromInt(i));
+                const tileY: gl.Float =@as(gl.Float, @floatFromInt(j));
+                var scaleX: gl.Float = tileScaleFactor;
+                var scaleY: gl.Float = tileScaleFactor;
+                var transX: gl.Float = -1.0 + (tileX * tileScaleFactor * 2) + tileScaleFactor;
+                var transY: gl.Float = 1.0 - (tileY * tileScaleFactor * 2) - tileScaleFactor;
+                var transV = [_]gl.Float{
+                    scaleX, scaleY,
+                    transX, transY,
+                };
 
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(self.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
+                var transform = matrix.scaleTranslateMat3(transV);
+                const location = gl.getUniformLocation(self.shaderProgram, "transform");
+                gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
+                e = gl.getError();
+                if (e != gl.NO_ERROR) {
+                    std.debug.print("error: {d}\n", .{e});
+                    return BackgroundErr.Error;
+                }
 
-        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
-        gl.uniform1i(textureLoc, 0);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
+                const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
+                gl.uniform1i(textureLoc, 0);
+                e = gl.getError();
+                if (e != gl.NO_ERROR) {
+                    std.debug.print("error: {d}\n", .{e});
+                    return BackgroundErr.Error;
+                }
 
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
+                gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
+                if (e != gl.NO_ERROR) {
+                    std.debug.print("error: {d}\n", .{e});
+                    return BackgroundErr.Error;
+                }
+            }
         }
     }
 };

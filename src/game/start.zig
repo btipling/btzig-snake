@@ -58,7 +58,7 @@ pub fn start() !void {
     var seg = try segment.Segment.init();
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
-    var bg = try background.Background.init(allocator);
+    var bg = try background.Background.init(allocator, gameGrid.size);
 
     var gameState = try state.State.init(
         gameGrid,
