@@ -4,9 +4,9 @@ const zstbi = @import("zstbi");
 const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
 
-pub const SegmentErr = error{Error};
+pub const HeadErr = error{Error};
 
-pub const Segment = struct {
+pub const Head = struct {
     vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
@@ -17,44 +17,32 @@ pub const Segment = struct {
     fragmentShader: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn initSideways() !Segment {
-        return Segment.init([_]gl.Float{
+    pub fn initRight() !Head {
+        return Head.init([_]gl.Float{
             // zig fmt: off
                 // positions   // texture coords
-                1,  1,          0.5, 1,
-                1,  -1,         0.5, 0,
+                1,  1,          1, 1,
+                1,  -1,         1, 0,
+                -1, -1,         0, 0,
+                -1, 1,          0, 1,
+                // zig fmt: on
+            });
+    }
+
+    pub fn initLeft() !Head {
+        return Head.init([_]gl.Float{
+            // zig fmt: off
+                // positions   // texture coords
+                1,  1,          0, 1,
+                1,  -1,         0, 0,
                 -1, -1,         1, 0,
                 -1, 1,          1, 1,
                 // zig fmt: on
             });
     }
 
-    pub fn initLeft() !Segment {
-        return Segment.init([_]gl.Float{
-            // zig fmt: off
-                // positions   // texture coords
-                1,  1,          1, 1,
-                1,  -1,         1, 0,
-                -1, -1,         0.5, 0,
-                -1, 1,          0.5, 1,
-                // zig fmt: on
-            });
-    }
-
-    pub fn initRight() !Segment {
-        return Segment.init([_]gl.Float{
-            // zig fmt: off
-                // positions   // texture coords
-                1,  1,          0, 1,
-                1,  -1,         0, 0,
-                -1, -1,         0.5, 0,
-                -1, 1,          0.5, 1,
-                // zig fmt: on
-            });
-    }
-
-    pub fn init(vertices: [16]gl.Float) !Segment {
-        var rv = Segment{
+    pub fn init(vertices: [16]gl.Float) !Head {
+        var rv = Head{
             .vertices = vertices,
             .indices = [_]gl.Uint{
                 0, 1, 3,
@@ -79,31 +67,31 @@ pub const Segment = struct {
         return rv;
     }
 
-    fn initVAO(_: Segment) !gl.Uint {
+    fn initVAO(_: Head) !gl.Uint {
         var VAO: gl.Uint = undefined;
         gl.genVertexArrays(1, &VAO);
         gl.bindVertexArray(VAO);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         return VAO;
     }
 
-    fn initVBO(_: Segment) !gl.Uint {
+    fn initVBO(_: Head) !gl.Uint {
         var VBO: gl.Uint = undefined;
         gl.genBuffers(1, &VBO);
         gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         return VBO;
     }
 
-    fn initEBO(self: Segment) !gl.Uint {
+    fn initEBO(self: Head) !gl.Uint {
         var EBO: gl.Uint = undefined;
         gl.genBuffers(1, &EBO);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
@@ -111,12 +99,12 @@ pub const Segment = struct {
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         return EBO;
     }
 
-    fn initTexture(self: Segment) !gl.Uint {
+    fn initTexture(self: Head) !gl.Uint {
         _ = self;
         var texture: gl.Uint = undefined;
         var e: gl.Uint = 0;
@@ -128,7 +116,7 @@ pub const Segment = struct {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_extended.png");
+        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_head.png");
         var image = try zstbi.Image.loadFromMemory(grassBytes, 4);
         defer image.deinit();
         std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
@@ -140,68 +128,68 @@ pub const Segment = struct {
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         gl.generateMipmap(gl.TEXTURE_2D);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         return texture;
     }
 
-    fn initData(self: Segment) !void {
+    fn initData(self: Head) !void {
         gl.bufferData(gl.ARRAY_BUFFER, self.vertices.len * @sizeOf(gl.Float), &self.vertices, gl.STATIC_DRAW);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 4 * @sizeOf(gl.Float), null);
         gl.enableVertexAttribArray(0);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         gl.vertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 4 * @sizeOf(gl.Float), @as(*anyopaque, @ptrFromInt(2 * @sizeOf(gl.Float))));
         gl.enableVertexAttribArray(1);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
     }
 
-    fn initVertexShader(_: Segment) !gl.Uint {
-        var vertexShaderSource: [:0]const u8 = @embedFile("shaders/segment.vs");
+    fn initVertexShader(_: Head) !gl.Uint {
+        var vertexShaderSource: [:0]const u8 = @embedFile("shaders/head.vs");
         return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
     }
 
-    fn initFragmentShader(_: Segment) !gl.Uint {
-        var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/segment.fs");
+    fn initFragmentShader(_: Head) !gl.Uint {
+        var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/head.fs");
         return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
     }
 
-    fn initShaderProgram(self: Segment) !gl.Uint {
-        return glutils.initProgram("SEGMENT", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
+    fn initShaderProgram(self: Head) !gl.Uint {
+        return glutils.initProgram("HEAD", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
-    pub fn draw(self: Segment, posX: gl.Float, posY: gl.Float, scaleFactor: gl.Float) !void {
+    pub fn draw(self: Head, posX: gl.Float, posY: gl.Float, scaleFactor: gl.Float) !void {
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, self.texture);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("bind texture error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
         gl.bindVertexArray(self.VAO);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
 
         // let's make the food for the snake tiny
@@ -220,7 +208,7 @@ pub const Segment = struct {
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
 
         const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
@@ -228,13 +216,13 @@ pub const Segment = struct {
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
 
         gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
+            return HeadErr.Error;
         }
     }
 };
