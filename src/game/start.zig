@@ -4,6 +4,7 @@ const gl = @import("zopengl");
 const zstbi = @import("zstbi");
 const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
+const head = @import("object/head/head.zig");
 const food = @import("object/food/food.zig");
 const background = @import("object/background/background.zig");
 const grid = @import("grid.zig");
@@ -58,8 +59,13 @@ pub fn start() !void {
 
     zstbi.init(allocator);
     defer zstbi.deinit();
+    zstbi.setFlipVerticallyOnLoad(true);
 
-    var seg = try segment.Segment.init();
+    var segSideways = try segment.Segment.initSideways();
+    var segLeft = try segment.Segment.initLeft();
+    var segRight = try segment.Segment.initRight();
+    var headRight = try head.Head.initRight();
+    var headLeft = try head.Head.initLeft();
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
     var bg = try background.Background.init(gameGrid.size);
@@ -92,10 +98,24 @@ pub fn start() !void {
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
         try bg.draw(0, 0, 1);
-        for (gameState.segments.items) |coords| {
+
+        var headCoords = gameState.segments.items[0];
+        var headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
+        var headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
+        if (gameState.direction == .Left) {
+            try headLeft.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+        } else {
+            try headRight.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+        }
+        for (gameState.segments.items[1..], 0..) |coords, i| {
             var posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
             var posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
-            try seg.draw(posX, posY, gameState.grid.scaleFactor);
+            switch (i % 2) {
+                0 => try segSideways.draw(posX, posY, gameState.grid.scaleFactor),
+                1 => try segLeft.draw(posX, posY, gameState.grid.scaleFactor),
+                2 => try segRight.draw(posX, posY, gameState.grid.scaleFactor),
+                else => {},
+            }
         }
         try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid.scaleFactor);
         sdl.gl.swapWindow(window);

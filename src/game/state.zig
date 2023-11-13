@@ -36,6 +36,7 @@ pub const State = struct {
     ) !State {
         var segments = std.ArrayList(coordinate).init(allocator);
         try segments.append(coordinate{ .x = startX, .y = startY });
+        try segments.append(coordinate{ .x = startX - 1, .y = startY }); // start with a tail
         return State{
             .initialStart = coordinate{ .x = startX, .y = startY },
             .score = 0,
@@ -101,7 +102,9 @@ pub const State = struct {
         self.delay = 1000;
         self.paused = false;
         self.segments.clearAndFree();
+        self.direction = Direction.Right;
         try self.segments.append(coordinate{ .x = self.initialStart.x, .y = self.initialStart.y });
+        try self.segments.append(coordinate{ .x = self.initialStart.x - 1, .y = self.initialStart.y }); // start with a tail
         State.generateFoodPosition(self);
     }
 
