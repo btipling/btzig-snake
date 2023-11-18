@@ -100,6 +100,9 @@ pub fn start() !void {
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
         try bg.draw(0, 0, 1);
+        // set opengl blending to allow for transparency in textures
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         var headCoords = gameState.segments.items[0];
         var headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
