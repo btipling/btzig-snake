@@ -175,16 +175,7 @@ pub const Background = struct {
             return BackgroundErr.Error;
         }
 
-        var gridObjectScale = gameGrid.gridScale();
-        var scaleX: gl.Float = gridObjectScale[0];
-        var scaleY: gl.Float = gridObjectScale[1];
-        var gridObjectTranslate = gameGrid.gridTranslate();
-        var transX: gl.Float = gridObjectTranslate[0];
-        var transY: gl.Float = gridObjectTranslate[1];
-        var transV = [_]gl.Float{
-            scaleX, scaleY,
-            transX, transY,
-        };
+        var transV = gameGrid.gridTransform();
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

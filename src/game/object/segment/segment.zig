@@ -204,18 +204,8 @@ pub const Segment = struct {
             std.debug.print("error: {d}\n", .{e});
             return SegmentErr.Error;
         }
-
-        // let's make the food for the snake tiny
-        var gridObjectScale = gameGrid.objectScale();
-        var scaleX: gl.Float = gridObjectScale[0];
-        var scaleY: gl.Float = gridObjectScale[1];
-        var gridObjectTranslate = gameGrid.objectTranslate(posX,posY);
-        var transX: gl.Float = gridObjectTranslate[0];
-        var transY: gl.Float = gridObjectTranslate[1];
-        var transV = [_]gl.Float{
-            scaleX, scaleY,
-            transX, transY,
-        };
+        
+        var transV = gameGrid.objectTransform(posX,posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

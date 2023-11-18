@@ -32,6 +32,24 @@ pub const Grid = struct {
         return [_]gl.Float{ transX, transY };
     }
 
+    pub fn gridTransform(self: Grid) [4]gl.Float {
+        var scale = self.gridScale();
+        var trans = self.gridTranslate();
+        return [_]gl.Float{
+            scale[0], scale[1],
+            trans[0], trans[1],
+        };
+    }
+
+    pub fn objectTransform(self: Grid, posX: gl.Float, posY: gl.Float) [4]gl.Float {
+        var scale = self.objectScale();
+        var trans = self.objectTranslate(posX, posY);
+        return [_]gl.Float{
+            scale[0], scale[1],
+            trans[0], trans[1],
+        };
+    }
+
     pub fn objectTranslate(self: Grid, posX: gl.Float, posY: gl.Float) [2]gl.Float {
         var scaleX: gl.Float = self.objectScale()[0];
         var scaleY: gl.Float = self.objectScale()[1];
