@@ -66,6 +66,8 @@ pub fn start() !void {
     var segRight = try segment.Segment.initRight();
     var headRight = try head.Head.initRight();
     var headLeft = try head.Head.initLeft();
+    var headUp = try head.Head.initUp();
+    var headDown = try head.Head.initDown();
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
     var bg = try background.Background.init(gameGrid.size);
@@ -98,14 +100,21 @@ pub fn start() !void {
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
         try bg.draw(0, 0, 1);
+        // set opengl blending to allow for transparency in textures
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         var headCoords = gameState.segments.items[0];
         var headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
         var headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
         if (gameState.direction == .Left) {
             try headLeft.draw(headPosX, headPosY, gameState.grid.scaleFactor);
-        } else {
+        } else if (gameState.direction == .Right) {
             try headRight.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+        } else if (gameState.direction == .Up) {
+            try headUp.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+        } else {
+            try headDown.draw(headPosX, headPosY, gameState.grid.scaleFactor);
         }
         for (gameState.segments.items[1..], 0..) |coords, i| {
             var posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);

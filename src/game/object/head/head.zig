@@ -21,8 +21,8 @@ pub const Head = struct {
         return Head.init([_]gl.Float{
             // zig fmt: off
                 // positions   // texture coords
-                1,  1,          1, 1,
-                1,  -1,         1, 0,
+                1,  1,          0.5, 1,
+                1,  -1,         0.5, 0,
                 -1, -1,         0, 0,
                 -1, 1,          0, 1,
                 // zig fmt: on
@@ -35,11 +35,36 @@ pub const Head = struct {
                 // positions   // texture coords
                 1,  1,          0, 1,
                 1,  -1,         0, 0,
+                -1, -1,         0.5, 0,
+                -1, 1,          0.5, 1,
+                // zig fmt: on
+            });
+    }
+
+    pub fn initDown() !Head {
+        return Head.init([_]gl.Float{
+            // zig fmt: off
+                // positions   // texture coords
+                1,  1,          0.5, 1,
+                1,  -1,         0.5, 0,
                 -1, -1,         1, 0,
                 -1, 1,          1, 1,
                 // zig fmt: on
             });
     }
+
+    pub fn initUp() !Head {
+        return Head.init([_]gl.Float{
+            // zig fmt: off
+                // positions   // texture coords
+                1,  1,          0.5, 0,
+                1,  -1,         0.5, 1,
+                -1, -1,         1, 1,
+                -1, 1,          1, 0,
+                // zig fmt: on
+            });
+    }
+
 
     pub fn init(vertices: [16]gl.Float) !Head {
         var rv = Head{
