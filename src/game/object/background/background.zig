@@ -3,6 +3,7 @@ const gl = @import("zopengl");
 const zstbi = @import("zstbi");
 const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
+const grid = @import("../../grid.zig");
 
 pub const BackgroundErr = error{Error};
 
@@ -153,7 +154,7 @@ pub const Background = struct {
         return glutils.initProgram("BACKGROUND", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
-    pub fn draw(self: Background, posX: gl.Float, posY: gl.Float, scaleFactor: gl.Float) !void {
+    pub fn draw(self: Background, gameGrid: grid.Grid) !void {
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -174,10 +175,12 @@ pub const Background = struct {
             return BackgroundErr.Error;
         }
 
-        var scaleX: gl.Float = scaleFactor;
-        var scaleY: gl.Float = scaleFactor;
-        var transX: gl.Float = -1.0 + (posX * scaleFactor * 2) + scaleFactor;
-        var transY: gl.Float = 1.0 - (posY * scaleFactor * 2) - scaleFactor;
+        var gridObjectScale = gameGrid.gridScale();
+        var scaleX: gl.Float = gridObjectScale[0];
+        var scaleY: gl.Float = gridObjectScale[1];
+        var gridObjectTranslate = gameGrid.gridTranslate();
+        var transX: gl.Float = gridObjectTranslate[0];
+        var transY: gl.Float = gridObjectTranslate[1];
         var transV = [_]gl.Float{
             scaleX, scaleY,
             transX, transY,

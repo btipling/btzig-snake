@@ -99,7 +99,7 @@ pub fn start() !void {
             lastTick = std.time.milliTimestamp();
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-        try bg.draw(0, 0, 1);
+        try bg.draw(gameState.grid);
         // set opengl blending to allow for transparency in textures
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -108,25 +108,25 @@ pub fn start() !void {
         var headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
         var headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
         if (gameState.direction == .Left) {
-            try headLeft.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headLeft.draw(headPosX, headPosY, gameState.grid);
         } else if (gameState.direction == .Right) {
-            try headRight.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headRight.draw(headPosX, headPosY, gameState.grid);
         } else if (gameState.direction == .Up) {
-            try headUp.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headUp.draw(headPosX, headPosY, gameState.grid);
         } else {
-            try headDown.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headDown.draw(headPosX, headPosY, gameState.grid);
         }
         for (gameState.segments.items[1..], 0..) |coords, i| {
             var posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
             var posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
             switch (i % 2) {
-                0 => try segSideways.draw(posX, posY, gameState.grid.scaleFactor),
-                1 => try segLeft.draw(posX, posY, gameState.grid.scaleFactor),
-                2 => try segRight.draw(posX, posY, gameState.grid.scaleFactor),
+                0 => try segSideways.draw(posX, posY, gameState.grid),
+                1 => try segLeft.draw(posX, posY, gameState.grid),
+                2 => try segRight.draw(posX, posY, gameState.grid),
                 else => {},
             }
         }
-        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid.scaleFactor);
+        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
         sdl.gl.swapWindow(window);
     }
 }
