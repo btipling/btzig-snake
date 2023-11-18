@@ -104,7 +104,7 @@ pub const Background = struct {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/grass.png");
+        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_bg.png");
         var image = try zstbi.Image.loadFromMemory(grassBytes, 4);
         defer image.deinit();
         std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
@@ -175,7 +175,7 @@ pub const Background = struct {
             return BackgroundErr.Error;
         }
 
-        var transV = gameGrid.gridTransform();
+        var transV = gameGrid.bgTransform();
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

@@ -14,6 +14,29 @@ pub const Grid = struct {
         };
     }
 
+    pub fn bgScale(_: Grid) [2]gl.Float {
+        // Assume a square grid in a 16:9 screen with grid on the left and the right a score panel
+        return [_]gl.Float{ 1.0, 1.0 };
+    }
+
+    pub fn bgTranslate(self: Grid) [2]gl.Float {
+        // grid should translate to left of window
+        var scaleX: gl.Float = self.bgScale()[0];
+        var scaleY: gl.Float = self.bgScale()[1];
+        var transX: gl.Float = -1.0 + scaleX;
+        var transY: gl.Float = 1.0 - scaleY;
+        return [_]gl.Float{ transX, transY };
+    }
+
+    pub fn bgTransform(self: Grid) [4]gl.Float {
+        var scale = self.bgScale();
+        var trans = self.bgTranslate();
+        return [_]gl.Float{
+            scale[0], scale[1],
+            trans[0], trans[1],
+        };
+    }
+
     pub fn gridScale(_: Grid) [2]gl.Float {
         // Assume a square grid in a 16:9 screen with grid on the left and the right a score panel
         return [_]gl.Float{ 0.5625, 1.0 };
