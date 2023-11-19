@@ -1,5 +1,7 @@
 const std = @import("std");
-const sdl = @import("zsdl");
+const glfw = @import("zglfw");
+const zgui = @import("zgui");
+const math = std.math;
 const gl = @import("zopengl");
 const zstbi = @import("zstbi");
 const cfg = @import("config.zig");
@@ -7,59 +9,64 @@ const segment = @import("object/segment/segment.zig");
 const head = @import("object/head/head.zig");
 const food = @import("object/food/food.zig");
 const background = @import("object/background/background.zig");
+const ui = @import("ui/ui.zig");
 const grid = @import("grid.zig");
 const state = @import("state.zig");
 const controls = @import("controls.zig");
 
-pub fn start() !void {
-    _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
+const embedded_font_data = @embedFile("assets/fonts/PressStart2P-Regular.ttf");
 
-    try sdl.init(.{ .audio = true, .video = true });
-    defer sdl.quit();
+pub fn run() !void {
+    glfw.init() catch {
+        std.log.err("Failed to initialize GLFW library.", .{});
+        return;
+    };
+    defer glfw.terminate();
 
     const gl_major = 4;
     const gl_minor = 6;
-    try sdl.gl.setAttribute(.context_profile_mask, @intFromEnum(sdl.gl.Profile.core));
-    try sdl.gl.setAttribute(.context_major_version, gl_major);
-    try sdl.gl.setAttribute(.context_minor_version, gl_minor);
-    try sdl.gl.setAttribute(.context_flags, @as(i32, @bitCast(sdl.gl.ContextFlags{ .forward_compatible = true })));
-
-    const window = try sdl.Window.create(
-        cfg.game_name,
-        sdl.Window.pos_undefined,
-        sdl.Window.pos_undefined,
-        cfg.windows_width,
-        cfg.windows_height,
-        .{ .opengl = true, .allow_highdpi = true },
-    );
+    glfw.windowHintTyped(.context_version_major, gl_major);
+    glfw.windowHintTyped(.context_version_minor, gl_minor);
+    glfw.windowHintTyped(.opengl_profile, .opengl_core_profile);
+    glfw.windowHintTyped(.opengl_forward_compat, true);
+    glfw.windowHintTyped(.client_api, .opengl_api);
+    glfw.windowHintTyped(.doublebuffer, true);
+    const window = glfw.Window.create(cfg.windows_width, cfg.windows_height, cfg.game_name, null) catch {
+        std.log.err("Failed to create game window.", .{});
+        return;
+    };
     defer window.destroy();
+    window.setSizeLimits(800, 800, -1, -1);
 
-    const gl_context = try sdl.gl.createContext(window);
-    defer sdl.gl.deleteContext(gl_context);
+    glfw.makeContextCurrent(window);
+    glfw.swapInterval(1);
 
-    try sdl.gl.makeCurrent(window, gl_context);
-    try sdl.gl.setSwapInterval(0);
-
-    try gl.loadCoreProfile(sdl.gl.getProcAddress, gl_major, gl_minor);
+    try gl.loadCoreProfile(glfw.getProcAddress, gl_major, gl_minor);
 
     {
-        var w: i32 = undefined;
-        var h: i32 = undefined;
-
-        try window.getSize(&w, &h);
+        const dimensions: [2]i32 = window.getSize();
+        var w = dimensions[0];
+        var h = dimensions[1];
         std.debug.print("Window size is {d}x{d}\n", .{ w, h });
-
-        sdl.gl.getDrawableSize(window, &w, &h);
-        std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
     }
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
+    zgui.init(allocator);
+    defer zgui.deinit();
+
+    zgui.backend.init(window);
+    defer zgui.backend.deinit();
+
     zstbi.init(allocator);
     defer zstbi.deinit();
     zstbi.setFlipVerticallyOnLoad(true);
+
+    const font_size = 24.0;
+    const font_large = zgui.io.addFontFromMemory(embedded_font_data, math.floor(font_size * 1.1));
+    zgui.io.setDefaultFont(font_large);
 
     var segSideways = try segment.Segment.initSideways();
     var segLeft = try segment.Segment.initLeft();
@@ -82,24 +89,18 @@ pub fn start() !void {
     );
     state.State.generateFoodPosition(&gameState);
     var lastTick = std.time.milliTimestamp();
-    main_loop: while (true) {
-        var event: sdl.Event = undefined;
-        while (sdl.pollEvent(&event)) {
-            if (event.type == .quit) {
-                break :main_loop;
-            } else if (event.type == .keydown) {
-                const quit = try controls.handleKey(&gameState, event.key.keysym.sym);
-                if (quit) {
-                    break :main_loop;
-                }
-            }
+    main_loop: while (!window.shouldClose()) {
+        glfw.pollEvents();
+        const quit = try controls.handleKey(&gameState, window);
+        if (quit) {
+            break :main_loop;
         }
         if (std.time.milliTimestamp() - lastTick > gameState.delay) {
             try state.State.move(&gameState);
             lastTick = std.time.milliTimestamp();
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-        try bg.draw(0, 0, 1);
+        try bg.draw(gameState.grid);
         // set opengl blending to allow for transparency in textures
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -108,25 +109,26 @@ pub fn start() !void {
         var headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
         var headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
         if (gameState.direction == .Left) {
-            try headLeft.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headLeft.draw(headPosX, headPosY, gameState.grid);
         } else if (gameState.direction == .Right) {
-            try headRight.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headRight.draw(headPosX, headPosY, gameState.grid);
         } else if (gameState.direction == .Up) {
-            try headUp.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headUp.draw(headPosX, headPosY, gameState.grid);
         } else {
-            try headDown.draw(headPosX, headPosY, gameState.grid.scaleFactor);
+            try headDown.draw(headPosX, headPosY, gameState.grid);
         }
         for (gameState.segments.items[1..], 0..) |coords, i| {
             var posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
             var posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
             switch (i % 2) {
-                0 => try segSideways.draw(posX, posY, gameState.grid.scaleFactor),
-                1 => try segLeft.draw(posX, posY, gameState.grid.scaleFactor),
-                2 => try segRight.draw(posX, posY, gameState.grid.scaleFactor),
+                0 => try segSideways.draw(posX, posY, gameState.grid),
+                1 => try segLeft.draw(posX, posY, gameState.grid),
+                2 => try segRight.draw(posX, posY, gameState.grid),
                 else => {},
             }
         }
-        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid.scaleFactor);
-        sdl.gl.swapWindow(window);
+        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
+        try ui.draw(&gameState, window);
+        window.swapBuffers();
     }
 }

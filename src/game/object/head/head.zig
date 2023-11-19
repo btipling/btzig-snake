@@ -3,6 +3,7 @@ const gl = @import("zopengl");
 const zstbi = @import("zstbi");
 const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
+const grid = @import("../../grid.zig");
 
 pub const HeadErr = error{Error};
 
@@ -196,7 +197,7 @@ pub const Head = struct {
         return glutils.initProgram("HEAD", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
-    pub fn draw(self: Head, posX: gl.Float, posY: gl.Float, scaleFactor: gl.Float) !void {
+    pub fn draw(self: Head, posX: gl.Float, posY: gl.Float, gameGrid: grid.Grid) !void {
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -217,15 +218,7 @@ pub const Head = struct {
             return HeadErr.Error;
         }
 
-        // let's make the food for the snake tiny
-        var scaleX: gl.Float = scaleFactor;
-        var scaleY: gl.Float = scaleFactor;
-        var transX: gl.Float = -1.0 + (posX * scaleFactor * 2) + scaleFactor;
-        var transY: gl.Float = 1.0 - (posY * scaleFactor * 2) - scaleFactor;
-        var transV = [_]gl.Float{
-            scaleX, scaleY,
-            transX, transY,
-        };
+        var transV = gameGrid.objectTransform(posX,posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

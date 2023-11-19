@@ -1,5 +1,6 @@
 const std = @import("std");
-const zsdl = @import("libs/zig-gamedev/libs/zsdl/build.zig");
+const zgui = @import("libs/zig-gamedev/libs/zgui/build.zig");
+const glfw = @import("libs/zig-gamedev/libs/zglfw/build.zig");
 const zopengl = @import("libs/zig-gamedev/libs/zopengl/build.zig");
 const zstbi = @import("libs/zig-gamedev/libs/zstbi/build.zig");
 
@@ -24,11 +25,15 @@ pub fn build(b: *std.Build) void {
         run_cmd.addArgs(args);
     }
 
-    const zsdl_pkg = zsdl.package(b, target, optimize, .{});
+    const zgui_pkg = zgui.package(b, target, optimize, .{
+        .options = .{ .backend = .glfw_opengl3 },
+    });
+    const zglf_pkg = glfw.package(b, target, optimize, .{});
     const zopengl_pkg = zopengl.package(b, target, optimize, .{});
     const zstbi_pkg = zstbi.package(b, target, optimize, .{});
 
-    zsdl_pkg.link(exe);
+    zgui_pkg.link(exe);
+    zglf_pkg.link(exe);
     zopengl_pkg.link(exe);
     zstbi_pkg.link(exe);
 
