@@ -9,6 +9,7 @@ const segment = @import("object/segment/segment.zig");
 const head = @import("object/head/head.zig");
 const food = @import("object/food/food.zig");
 const background = @import("object/background/background.zig");
+const splash = @import("object/splash/splash.zig");
 const ui = @import("ui/ui.zig");
 const grid = @import("grid.zig");
 const state = @import("state.zig");
@@ -31,6 +32,7 @@ pub fn run() !void {
     glfw.windowHintTyped(.opengl_forward_compat, true);
     glfw.windowHintTyped(.client_api, .opengl_api);
     glfw.windowHintTyped(.doublebuffer, true);
+    glfw.windowHintTyped(.resizable, false);
     const window = glfw.Window.create(cfg.windows_width, cfg.windows_height, cfg.game_name, null) catch {
         std.log.err("Failed to create game window.", .{});
         return;
@@ -78,6 +80,7 @@ pub fn run() !void {
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
     var bg = try background.Background.init();
+    var gameSplash = try splash.Splash.init();
 
     var gameState = try state.State.init(
         gameGrid,
@@ -129,6 +132,9 @@ pub fn run() !void {
         }
         try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
         try ui.draw(&gameState, window);
+        if (gameState.paused) {
+            try gameSplash.draw(gameState.grid);
+        }
         window.swapBuffers();
     }
 }

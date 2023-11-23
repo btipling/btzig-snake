@@ -20,7 +20,6 @@ pub const Grid = struct {
     }
 
     pub fn bgTranslate(self: Grid) [2]gl.Float {
-        // grid should translate to left of window
         const scaleX: gl.Float = self.bgScale()[0];
         const scaleY: gl.Float = self.bgScale()[1];
         const transX: gl.Float = -1.0 + scaleX;
@@ -55,9 +54,27 @@ pub const Grid = struct {
         return [_]gl.Float{ transX, transY };
     }
 
+    pub fn gridTranslateCenter(self: Grid) [2]gl.Float {
+        // grid should translate to center of window
+        const scaleX: gl.Float = self.gridScale()[0];
+        const scaleY: gl.Float = self.gridScale()[1];
+        const transX: gl.Float = -0.5 + scaleX;
+        const transY: gl.Float = 1.0 - scaleY;
+        return [_]gl.Float{ transX, transY };
+    }
+
     pub fn gridTransform(self: Grid) [4]gl.Float {
         const scale = self.gridScale();
         const trans = self.gridTranslate();
+        return [_]gl.Float{
+            scale[0], scale[1],
+            trans[0], trans[1],
+        };
+    }
+
+    pub fn gridTransformCenter(self: Grid) [4]gl.Float {
+        const scale = self.gridScale();
+        const trans = self.gridTranslateCenter();
         return [_]gl.Float{
             scale[0], scale[1],
             trans[0], trans[1],
