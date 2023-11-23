@@ -6,16 +6,13 @@ const glutils = @import("../../gl/gl.zig");
 const grid = @import("../../grid.zig");
 
 pub const HeadErr = error{Error};
+const objectName = "head";
 
 pub const Head = struct {
     vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
-    VBO: gl.Uint,
-    EBO: gl.Uint,
     texture: gl.Uint,
-    vertexShader: gl.Uint,
-    fragmentShader: gl.Uint,
     shaderProgram: gl.Uint,
 
     pub fn initRight() !Head {
@@ -75,56 +72,26 @@ pub const Head = struct {
                 1, 2, 3,
             },
             .VAO = undefined,
-            .VBO = undefined,
-            .EBO = undefined,
             .texture = undefined,
-            .vertexShader = undefined,
-            .fragmentShader = undefined,
             .shaderProgram = undefined,
         };
-        rv.VAO = try rv.initVAO();
-        rv.VBO = try rv.initVBO();
-        rv.EBO = try rv.initEBO();
+        rv.VAO = try glutils.initVAO(objectName);
+        _ = try glutils.initVBO(objectName);
+        _ = try rv.initEBO();
         rv.texture = try rv.initTexture();
-        rv.vertexShader = try rv.initVertexShader();
-        rv.fragmentShader = try rv.initFragmentShader();
-        rv.shaderProgram = try rv.initShaderProgram();
+        const vertexShader = try glutils.initVertexShader(@embedFile("shaders/head.vs"), objectName);
+        const fragmentShader = try glutils.initFragmentShader(@embedFile("shaders/head.fs"), objectName);
+        rv.shaderProgram = try glutils.initProgram("BACKGROUND", &[_]gl.Uint{ vertexShader, fragmentShader });
         try rv.initData();
         return rv;
     }
 
-    fn initVAO(_: Head) !gl.Uint {
-        var VAO: gl.Uint = undefined;
-        gl.genVertexArrays(1, &VAO);
-        gl.bindVertexArray(VAO);
-        const e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return HeadErr.Error;
-        }
-        return VAO;
-    }
-
-    fn initVBO(_: Head) !gl.Uint {
-        var VBO: gl.Uint = undefined;
-        gl.genBuffers(1, &VBO);
-        gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-        const e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return HeadErr.Error;
-        }
-        return VBO;
-    }
-
     fn initEBO(self: Head) !gl.Uint {
-        var EBO: gl.Uint = undefined;
-        gl.genBuffers(1, &EBO);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
+        const EBO = glutils.initEBO(objectName);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indices.len * @sizeOf(gl.Int), &self.indices, gl.STATIC_DRAW);
         const e = gl.getError();
         if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
+            std.debug.print("{s} buffer data error: {d}\n", .{objectName, e});
             return HeadErr.Error;
         }
         return EBO;

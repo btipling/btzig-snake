@@ -6,20 +6,16 @@ const glutils = @import("../../gl/gl.zig");
 const grid = @import("../../grid.zig");
 
 pub const BackgroundErr = error{Error};
+const objectName = "background";
 
 pub const Background = struct {
     vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
-    VBO: gl.Uint,
-    EBO: gl.Uint,
     texture: gl.Uint,
-    vertexShader: gl.Uint,
-    fragmentShader: gl.Uint,
     shaderProgram: gl.Uint,
-    gridSize: gl.Float,
 
-    pub fn init(gridSize: gl.Float) !Background {
+    pub fn init() !Background {
         std.debug.print("init background\n", .{});
         var rv = Background{
             .vertices = [_]gl.Float{
@@ -36,95 +32,29 @@ pub const Background = struct {
                 1, 2, 3,
             },
             .VAO = undefined,
-            .VBO = undefined,
-            .EBO = undefined,
             .texture = undefined,
-            .vertexShader = undefined,
-            .fragmentShader = undefined,
             .shaderProgram = undefined,
-            .gridSize = gridSize,
         };
-        rv.VAO = try rv.initVAO();
-        rv.VBO = try rv.initVBO();
-        rv.EBO = try rv.initEBO();
-        rv.texture = try rv.initTexture();
-        rv.vertexShader = try rv.initVertexShader();
-        rv.fragmentShader = try rv.initFragmentShader();
-        rv.shaderProgram = try rv.initShaderProgram();
+        rv.VAO = try glutils.initVAO(objectName);
+        _ = try glutils.initVBO(objectName);
+        _ = try rv.initEBO();
+        rv.texture = try glutils.initTexture( @embedFile("../../assets/textures/snake_bg.png"), objectName);
+        const vertexShader = try glutils.initVertexShader(@embedFile("shaders/background.vs"), objectName);
+        const fragmentShader = try glutils.initFragmentShader(@embedFile("shaders/background.fs"), objectName);
+        rv.shaderProgram = try glutils.initProgram("BACKGROUND", &[_]gl.Uint{ vertexShader, fragmentShader });
         try rv.initData();
         return rv;
     }
 
-    fn initVAO(_: Background) !gl.Uint {
-        var VAO: gl.Uint = undefined;
-        gl.genVertexArrays(1, &VAO);
-        gl.bindVertexArray(VAO);
-        const e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-        return VAO;
-    }
-
-    fn initVBO(_: Background) !gl.Uint {
-        var VBO: gl.Uint = undefined;
-        gl.genBuffers(1, &VBO);
-        gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-        const e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-        return VBO;
-    }
-
     fn initEBO(self: Background) !gl.Uint {
-        var EBO: gl.Uint = undefined;
-        gl.genBuffers(1, &EBO);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
+        const EBO = glutils.initEBO(objectName);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indices.len * @sizeOf(gl.Int), &self.indices, gl.STATIC_DRAW);
         const e = gl.getError();
         if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
+            std.debug.print("{s} buffer data error: {d}\n", .{objectName, e});
             return BackgroundErr.Error;
         }
         return EBO;
-    }
-
-    fn initTexture(self: Background) !gl.Uint {
-        _ = self;
-        var texture: gl.Uint = undefined;
-        var e: gl.Uint = 0;
-        gl.genTextures(1, &texture);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        const snake_bg: [:0]const u8 = @embedFile("../../assets/textures/snake_bg.png");
-        var image = try zstbi.Image.loadFromMemory(snake_bg, 4);
-        defer image.deinit();
-        std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
-
-        const width: gl.Int = @as(gl.Int, @intCast(image.width));
-        const height: gl.Int = @as(gl.Int, @intCast(image.height));
-        const imageData: *const anyopaque = image.data.ptr;
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, imageData);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-        gl.generateMipmap(gl.TEXTURE_2D);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-        return texture;
     }
 
     fn initData(self: Background) !void {
@@ -138,20 +68,6 @@ pub const Background = struct {
             std.debug.print("error: {d}\n", .{e});
             return BackgroundErr.Error;
         }
-    }
-
-    fn initVertexShader(_: Background) !gl.Uint {
-        const vertexShaderSource: [:0]const u8 = @embedFile("shaders/background.vs");
-        return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
-    }
-
-    fn initFragmentShader(_: Background) !gl.Uint {
-        const fragmentShaderSource: [:0]const u8 = @embedFile("shaders/background.fs");
-        return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
-    }
-
-    fn initShaderProgram(self: Background) !gl.Uint {
-        return glutils.initProgram("BACKGROUND", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
     pub fn draw(self: Background, gameGrid: grid.Grid) !void {

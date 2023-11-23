@@ -77,7 +77,7 @@ pub fn run() !void {
     var headDown = try head.Head.initDown();
     var foodItem = try food.Food.init();
     var gameGrid = grid.Grid.init(cfg.grid_size);
-    var bg = try background.Background.init(gameGrid.size);
+    var bg = try background.Background.init();
 
     var gameState = try state.State.init(
         gameGrid,
