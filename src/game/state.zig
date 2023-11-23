@@ -56,7 +56,7 @@ pub const State = struct {
     }
 
     pub fn generateFoodPosition(self: *State) void {
-        var foodPos = self.grid.randomGridPosition(self.score);
+        const foodPos = self.grid.randomGridPosition(self.score);
         self.foodX = foodPos[0];
         self.foodY = foodPos[1];
     }
@@ -64,7 +64,7 @@ pub const State = struct {
     pub fn updateHeadPosition(self: *State, x: gl.Float, y: gl.Float) !void {
         var newX = x;
         var newY = y;
-        var head = self.getHeadPosition();
+        const head = self.getHeadPosition();
         if (newX == head.x and newY == head.y) {
             return;
         }

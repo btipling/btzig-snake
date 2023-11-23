@@ -45,8 +45,8 @@ pub fn run() !void {
 
     {
         const dimensions: [2]i32 = window.getSize();
-        var w = dimensions[0];
-        var h = dimensions[1];
+        const w = dimensions[0];
+        const h = dimensions[1];
         std.debug.print("Window size is {d}x{d}\n", .{ w, h });
     }
 
@@ -105,9 +105,9 @@ pub fn run() !void {
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        var headCoords = gameState.segments.items[0];
-        var headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
-        var headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
+        const headCoords = gameState.segments.items[0];
+        const headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
+        const headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
         if (gameState.direction == .Left) {
             try headLeft.draw(headPosX, headPosY, gameState.grid);
         } else if (gameState.direction == .Right) {
@@ -118,8 +118,8 @@ pub fn run() !void {
             try headDown.draw(headPosX, headPosY, gameState.grid);
         }
         for (gameState.segments.items[1..], 0..) |coords, i| {
-            var posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
-            var posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
+            const posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
+            const posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
             switch (i % 2) {
                 0 => try segSideways.draw(posX, posY, gameState.grid),
                 1 => try segLeft.draw(posX, posY, gameState.grid),

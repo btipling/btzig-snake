@@ -97,7 +97,7 @@ pub const Head = struct {
         var VAO: gl.Uint = undefined;
         gl.genVertexArrays(1, &VAO);
         gl.bindVertexArray(VAO);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return HeadErr.Error;
@@ -109,7 +109,7 @@ pub const Head = struct {
         var VBO: gl.Uint = undefined;
         gl.genBuffers(1, &VBO);
         gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return HeadErr.Error;
@@ -122,7 +122,7 @@ pub const Head = struct {
         gl.genBuffers(1, &EBO);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indices.len * @sizeOf(gl.Int), &self.indices, gl.STATIC_DRAW);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return HeadErr.Error;
@@ -142,7 +142,7 @@ pub const Head = struct {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_head.png");
+        const grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_head.png");
         var image = try zstbi.Image.loadFromMemory(grassBytes, 4);
         defer image.deinit();
         std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
@@ -184,12 +184,12 @@ pub const Head = struct {
     }
 
     fn initVertexShader(_: Head) !gl.Uint {
-        var vertexShaderSource: [:0]const u8 = @embedFile("shaders/head.vs");
+        const vertexShaderSource: [:0]const u8 = @embedFile("shaders/head.vs");
         return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
     }
 
     fn initFragmentShader(_: Head) !gl.Uint {
-        var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/head.fs");
+        const fragmentShaderSource: [:0]const u8 = @embedFile("shaders/head.fs");
         return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
     }
 
@@ -218,7 +218,7 @@ pub const Head = struct {
             return HeadErr.Error;
         }
 
-        var transV = gameGrid.objectTransform(posX,posY);
+        const transV = gameGrid.objectTransform(posX,posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

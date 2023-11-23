@@ -33,7 +33,7 @@ pub const Food = struct {
         rv.vertices[0] = 0.0;
         rv.vertices[1] = 0.0;
         for (0..rv.num_vertices + 1) |i| {
-            var angle = @as(gl.Float, @floatFromInt(i)) / @as(gl.Float, @floatFromInt(rv.num_vertices)) * 2 * 3.14159;
+            const angle = @as(gl.Float, @floatFromInt(i)) / @as(gl.Float, @floatFromInt(rv.num_vertices)) * 2 * 3.14159;
             rv.vertices[i * 2] = @floatCast(@sin(angle));
             rv.vertices[i * 2 + 1] = @floatCast(@cos(angle));
         }
@@ -57,7 +57,7 @@ pub const Food = struct {
         var VAO: gl.Uint = undefined;
         gl.genVertexArrays(1, &VAO);
         gl.bindVertexArray(VAO);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return FoodErr.Error;
@@ -69,7 +69,7 @@ pub const Food = struct {
         var VBO: gl.Uint = undefined;
         gl.genBuffers(1, &VBO);
         gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return FoodErr.Error;
@@ -82,7 +82,7 @@ pub const Food = struct {
         gl.genBuffers(1, &EBO);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indices.len * @sizeOf(gl.Int), &self.indices, gl.STATIC_DRAW);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return FoodErr.Error;
@@ -94,7 +94,7 @@ pub const Food = struct {
         gl.bufferData(gl.ARRAY_BUFFER, self.vertices.len * @sizeOf(gl.Float), &self.vertices, gl.STATIC_DRAW);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(gl.Float), null);
         gl.enableVertexAttribArray(0);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return FoodErr.Error;
@@ -102,12 +102,12 @@ pub const Food = struct {
     }
 
     fn initVertexShader(_: Food) !gl.Uint {
-        var vertexShaderSource: [:0]const u8 = @embedFile("shaders/food.vs");
+        const vertexShaderSource: [:0]const u8 = @embedFile("shaders/food.vs");
         return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
     }
 
     fn initFragmentShader(_: Food) !gl.Uint {
-        var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/food.fs");
+        const fragmentShaderSource: [:0]const u8 = @embedFile("shaders/food.fs");
         return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
     }
 
@@ -129,7 +129,7 @@ pub const Food = struct {
             return FoodErr.Error;
         }
 
-        var transV = gameGrid.objectTransform(posX, posY);
+        const transV = gameGrid.objectTransform(posX, posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

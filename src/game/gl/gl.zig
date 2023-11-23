@@ -4,7 +4,7 @@ const gl = @import("zopengl");
 pub const GLErr = error{Error};
 
 pub fn initProgram(name: []const u8, shaders: []const gl.Uint) !gl.Uint {
-    var shaderProgram: gl.Uint = gl.createProgram();
+    const shaderProgram: gl.Uint = gl.createProgram();
     for (shaders) |shader| {
         gl.attachShader(shaderProgram, shader);
     }
@@ -21,14 +21,14 @@ pub fn initProgram(name: []const u8, shaders: []const gl.Uint) !gl.Uint {
         var infoLog: [512]u8 = undefined;
         var logSize: gl.Int = 0;
         gl.getProgramInfoLog(shaderProgram, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
+        const i: usize = @intCast(logSize);
         std.debug.print("ERROR::SHADER::{s}::PROGRAM::LINKING_FAILED\n{s}\n", .{ name, infoLog[0..i] });
         return GLErr.Error;
     }
     var infoLog: [512]u8 = undefined;
     var logSize: gl.Int = 0;
     gl.getProgramInfoLog(shaderProgram, 512, &logSize, &infoLog);
-    var i: usize = @intCast(logSize);
+    const i: usize = @intCast(logSize);
     std.debug.print("INFO::SHADER::{s}::PROGRAM::LINKING_SUCCESS {d}\n{s}\n", .{ name, i, infoLog[0..i] });
 
     for (shaders) |shader| {
@@ -47,7 +47,7 @@ pub fn initProgram(name: []const u8, shaders: []const gl.Uint) !gl.Uint {
 pub fn initShader(name: []const u8, source: [:0]const u8, shaderType: c_uint) !gl.Uint {
     std.debug.print("{s} source: {s}\n", .{ name, source.ptr });
 
-    var shader: gl.Uint = gl.createShader(shaderType);
+    const shader: gl.Uint = gl.createShader(shaderType);
     gl.shaderSource(shader, 1, &[_][*c]const u8{source.ptr}, null);
     gl.compileShader(shader);
 
@@ -57,7 +57,7 @@ pub fn initShader(name: []const u8, source: [:0]const u8, shaderType: c_uint) !g
         var infoLog: [512]u8 = undefined;
         var logSize: gl.Int = 0;
         gl.getShaderInfoLog(shader, 512, &logSize, &infoLog);
-        var i: usize = @intCast(logSize);
+        const i: usize = @intCast(logSize);
         std.debug.print("ERROR::SHADER::{s}::COMPILATION_FAILED\n{s}\n", .{ name, infoLog[0..i] });
         return GLErr.Error;
     }
@@ -65,7 +65,7 @@ pub fn initShader(name: []const u8, source: [:0]const u8, shaderType: c_uint) !g
     var infoLog: [512]u8 = undefined;
     var logSize: gl.Int = 0;
     gl.getShaderInfoLog(shader, 512, &logSize, &infoLog);
-    var i: usize = @intCast(logSize);
+    const i: usize = @intCast(logSize);
     std.debug.print("INFO::SHADER::{s}::LINKING_SUCCESS\n{s}\n", .{ name, infoLog[0..i] });
 
     return shader;
