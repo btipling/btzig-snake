@@ -14,6 +14,9 @@ const Direction = enum(i32) {
     Down,
 };
 
+const moveThrottleDuration = 25;
+const uiThrottleDuration = 400;
+
 pub const State = struct {
     initialStart: coordinate,
     score: u32,
@@ -25,6 +28,8 @@ pub const State = struct {
     foodY: gl.Float,
     grid: grid.Grid,
     segments: std.ArrayList(coordinate),
+    lastMove: i64,
+    lastUI: i64,
 
     pub fn init(
         gameGrid: grid.Grid,
@@ -41,14 +46,34 @@ pub const State = struct {
             .initialStart = coordinate{ .x = startX, .y = startY },
             .score = 0,
             .speed = initialSpeed,
-            .paused = false,
+            .paused = true,
             .direction = Direction.Right,
             .delay = initialDelay,
             .foodX = 0.0,
             .foodY = 0.0,
             .grid = gameGrid,
             .segments = segments,
+            .lastMove = 0,
+            .lastUI = 0,
         };
+    }
+
+    fn isMoveThrottled(self: *State) bool {
+        const now = std.time.milliTimestamp();
+        if (now - self.lastMove < moveThrottleDuration) {
+            return true;
+        }
+        self.lastMove = now;
+        return false;
+    }
+
+    fn isUIThrottled(self: *State) bool {
+        const now = std.time.milliTimestamp();
+        if (now - self.lastUI < uiThrottleDuration) {
+            return true;
+        }
+        self.lastUI = now;
+        return false;
     }
 
     pub fn getHeadPosition(self: *State) coordinate {
@@ -56,7 +81,7 @@ pub const State = struct {
     }
 
     pub fn generateFoodPosition(self: *State) void {
-        var foodPos = self.grid.randomGridPosition(self.score);
+        const foodPos = self.grid.randomGridPosition(self.score);
         self.foodX = foodPos[0];
         self.foodY = foodPos[1];
     }
@@ -64,7 +89,7 @@ pub const State = struct {
     pub fn updateHeadPosition(self: *State, x: gl.Float, y: gl.Float) !void {
         var newX = x;
         var newY = y;
-        var head = self.getHeadPosition();
+        const head = self.getHeadPosition();
         if (newX == head.x and newY == head.y) {
             return;
         }
@@ -100,7 +125,7 @@ pub const State = struct {
         self.score = 0;
         self.speed = 1;
         self.delay = 1000;
-        self.paused = false;
+        self.paused = true;
         self.segments.clearAndFree();
         self.direction = Direction.Right;
         try self.segments.append(coordinate{ .x = self.initialStart.x, .y = self.initialStart.y });
@@ -135,12 +160,18 @@ pub const State = struct {
     // pause
 
     pub fn togglePause(self: *State) void {
+        if (self.isUIThrottled()) {
+            return;
+        }
         self.paused = !self.paused;
     }
 
     // direction
 
     pub fn goLeft(self: *State) !void {
+        if (self.paused or self.isMoveThrottled()) {
+            return;
+        }
         if (self.direction == Direction.Right) {
             return;
         }
@@ -149,6 +180,9 @@ pub const State = struct {
     }
 
     pub fn goRight(self: *State) !void {
+        if (self.paused or self.isMoveThrottled()) {
+            return;
+        }
         if (self.direction == Direction.Left) {
             return;
         }
@@ -157,6 +191,9 @@ pub const State = struct {
     }
 
     pub fn goUp(self: *State) !void {
+        if (self.paused or self.isMoveThrottled()) {
+            return;
+        }
         if (self.direction == Direction.Down) {
             return;
         }
@@ -165,6 +202,9 @@ pub const State = struct {
     }
 
     pub fn goDown(self: *State) !void {
+        if (self.paused or self.isMoveThrottled()) {
+            return;
+        }
         if (self.direction == Direction.Up) {
             return;
         }

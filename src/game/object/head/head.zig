@@ -6,16 +6,13 @@ const glutils = @import("../../gl/gl.zig");
 const grid = @import("../../grid.zig");
 
 pub const HeadErr = error{Error};
+const objectName = "head";
 
 pub const Head = struct {
     vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
-    VBO: gl.Uint,
-    EBO: gl.Uint,
     texture: gl.Uint,
-    vertexShader: gl.Uint,
-    fragmentShader: gl.Uint,
     shaderProgram: gl.Uint,
 
     pub fn initRight() !Head {
@@ -75,56 +72,26 @@ pub const Head = struct {
                 1, 2, 3,
             },
             .VAO = undefined,
-            .VBO = undefined,
-            .EBO = undefined,
             .texture = undefined,
-            .vertexShader = undefined,
-            .fragmentShader = undefined,
             .shaderProgram = undefined,
         };
-        rv.VAO = try rv.initVAO();
-        rv.VBO = try rv.initVBO();
-        rv.EBO = try rv.initEBO();
+        rv.VAO = try glutils.initVAO(objectName);
+        _ = try glutils.initVBO(objectName);
+        _ = try rv.initEBO();
         rv.texture = try rv.initTexture();
-        rv.vertexShader = try rv.initVertexShader();
-        rv.fragmentShader = try rv.initFragmentShader();
-        rv.shaderProgram = try rv.initShaderProgram();
+        const vertexShader = try glutils.initVertexShader(@embedFile("shaders/head.vs"), objectName);
+        const fragmentShader = try glutils.initFragmentShader(@embedFile("shaders/head.fs"), objectName);
+        rv.shaderProgram = try glutils.initProgram("BACKGROUND", &[_]gl.Uint{ vertexShader, fragmentShader });
         try rv.initData();
         return rv;
     }
 
-    fn initVAO(_: Head) !gl.Uint {
-        var VAO: gl.Uint = undefined;
-        gl.genVertexArrays(1, &VAO);
-        gl.bindVertexArray(VAO);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return HeadErr.Error;
-        }
-        return VAO;
-    }
-
-    fn initVBO(_: Head) !gl.Uint {
-        var VBO: gl.Uint = undefined;
-        gl.genBuffers(1, &VBO);
-        gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return HeadErr.Error;
-        }
-        return VBO;
-    }
-
     fn initEBO(self: Head) !gl.Uint {
-        var EBO: gl.Uint = undefined;
-        gl.genBuffers(1, &EBO);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
+        const EBO = glutils.initEBO(objectName);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indices.len * @sizeOf(gl.Int), &self.indices, gl.STATIC_DRAW);
-        var e = gl.getError();
+        const e = gl.getError();
         if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
+            std.debug.print("{s} buffer data error: {d}\n", .{objectName, e});
             return HeadErr.Error;
         }
         return EBO;
@@ -142,7 +109,7 @@ pub const Head = struct {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        var grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_head.png");
+        const grassBytes: [:0]const u8 = @embedFile("../../assets/textures/snake_head.png");
         var image = try zstbi.Image.loadFromMemory(grassBytes, 4);
         defer image.deinit();
         std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
@@ -184,12 +151,12 @@ pub const Head = struct {
     }
 
     fn initVertexShader(_: Head) !gl.Uint {
-        var vertexShaderSource: [:0]const u8 = @embedFile("shaders/head.vs");
+        const vertexShaderSource: [:0]const u8 = @embedFile("shaders/head.vs");
         return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
     }
 
     fn initFragmentShader(_: Head) !gl.Uint {
-        var fragmentShaderSource: [:0]const u8 = @embedFile("shaders/head.fs");
+        const fragmentShaderSource: [:0]const u8 = @embedFile("shaders/head.fs");
         return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
     }
 
@@ -218,7 +185,7 @@ pub const Head = struct {
             return HeadErr.Error;
         }
 
-        var transV = gameGrid.objectTransform(posX,posY);
+        const transV = gameGrid.objectTransform(posX,posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

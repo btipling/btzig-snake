@@ -43,7 +43,7 @@ pub fn scaleTranslateMat3(vec: [4]gl.Float) [9]gl.Float {
 }
 
 pub fn rotateMat3(angle: gl.Float) [9]gl.Float {
-    var c = @import("math").cos(angle);
-    var s = @import("math").sin(angle);
+    const c = @import("math").cos(angle);
+    const s = @import("math").sin(angle);
     return [_]gl.Float{ c, -s, 0, s, c, 0, 0, 0, 1 };
 }
