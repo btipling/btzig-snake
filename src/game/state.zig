@@ -41,7 +41,7 @@ pub const State = struct {
             .initialStart = coordinate{ .x = startX, .y = startY },
             .score = 0,
             .speed = initialSpeed,
-            .paused = false,
+            .paused = true,
             .direction = Direction.Right,
             .delay = initialDelay,
             .foodX = 0.0,
@@ -100,7 +100,7 @@ pub const State = struct {
         self.score = 0;
         self.speed = 1;
         self.delay = 1000;
-        self.paused = false;
+        self.paused = true;
         self.segments.clearAndFree();
         self.direction = Direction.Right;
         try self.segments.append(coordinate{ .x = self.initialStart.x, .y = self.initialStart.y });
@@ -141,6 +141,9 @@ pub const State = struct {
     // direction
 
     pub fn goLeft(self: *State) !void {
+        if (self.paused) {
+            return;
+        }
         if (self.direction == Direction.Right) {
             return;
         }
@@ -149,6 +152,9 @@ pub const State = struct {
     }
 
     pub fn goRight(self: *State) !void {
+        if (self.paused) {
+            return;
+        }
         if (self.direction == Direction.Left) {
             return;
         }
@@ -157,6 +163,9 @@ pub const State = struct {
     }
 
     pub fn goUp(self: *State) !void {
+        if (self.paused) {
+            return;
+        }
         if (self.direction == Direction.Down) {
             return;
         }
@@ -165,6 +174,9 @@ pub const State = struct {
     }
 
     pub fn goDown(self: *State) !void {
+        if (self.paused) {
+            return;
+        }
         if (self.direction == Direction.Up) {
             return;
         }
