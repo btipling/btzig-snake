@@ -156,33 +156,25 @@ pub const Head = struct {
         const posX: gl.Float = try self.state.grid.indexToGridPosition(headCoords.x);
         const posY: gl.Float = try self.state.grid.indexToGridPosition(headCoords.y);
         if (self.state.direction == .Left) {
-            try drawHead(self.shaderProgram, self.VAOs[0], self.texture, self.indices, posX, posY, self.state.grid);
+            try self.drawHead(self.VAOs[0], posX, posY);
         } else if (self.state.direction == .Right) {
-            try drawHead(self.shaderProgram, self.VAOs[1], self.texture, self.indices, posX, posY, self.state.grid);
+            try self.drawHead(self.VAOs[1], posX, posY);
         } else if (self.state.direction == .Up) {
-            try drawHead(self.shaderProgram, self.VAOs[2], self.texture, self.indices, posX, posY, self.state.grid);
+            try self.drawHead(self.VAOs[2], posX, posY);
         } else {
-            try drawHead(self.shaderProgram, self.VAOs[3], self.texture, self.indices, posX, posY, self.state.grid);
+            try self.drawHead(self.VAOs[3], posX, posY);
         }
     }
 
-    fn drawHead(
-        shaderProgram: gl.Uint,
-        VAO: gl.Uint,
-        texture: gl.Uint,
-        indices: [6]gl.Uint,
-        posX: gl.Float,
-        posY: gl.Float,
-        gameGrid: grid.Grid,
-    ) !void {
-        gl.useProgram(shaderProgram);
+    fn drawHead(self: Head, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
+        gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return HeadErr.Error;
         }
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_2D, self.texture);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("bind texture error: {d}\n", .{e});
@@ -195,10 +187,10 @@ pub const Head = struct {
             return HeadErr.Error;
         }
 
-        const transV = gameGrid.objectTransform(posX, posY);
+        const transV = self.state.grid.objectTransform(posX, posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(shaderProgram, "transform");
+        const location = gl.getUniformLocation(self.shaderProgram, "transform");
         gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -206,7 +198,7 @@ pub const Head = struct {
             return HeadErr.Error;
         }
 
-        const textureLoc = gl.getUniformLocation(shaderProgram, "texture1");
+        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
         gl.uniform1i(textureLoc, 0);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -214,7 +206,7 @@ pub const Head = struct {
             return HeadErr.Error;
         }
 
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((indices.len))), gl.UNSIGNED_INT, null);
+        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return HeadErr.Error;

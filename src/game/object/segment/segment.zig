@@ -150,27 +150,19 @@ pub const Segment = struct {
         for (self.state.segments.items[1..], 0..) |coords, i| {
             const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
             const posY: gl.Float = try self.state.grid.indexToGridPosition(coords.y);
-            try drawSegment(self.shaderProgram, self.VAOs[i % 2], self.texture, self.indices, posX, posY, self.state.grid);
+            try self.drawSegment(self.VAOs[i % 2], posX, posY);
         }
     }
 
-    fn drawSegment(
-        shaderProgram: gl.Uint,
-        VAO: gl.Uint,
-        texture: gl.Uint,
-        indices: [6]gl.Uint,
-        posX: gl.Float,
-        posY: gl.Float,
-        gameGrid: grid.Grid,
-    ) !void {
-        gl.useProgram(shaderProgram);
+    fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
+        gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return SegmentErr.Error;
         }
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_2D, self.texture);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
             std.debug.print("bind texture error: {d}\n", .{e});
@@ -183,10 +175,10 @@ pub const Segment = struct {
             return SegmentErr.Error;
         }
 
-        const transV = gameGrid.objectTransform(posX, posY);
+        const transV = self.state.grid.objectTransform(posX, posY);
 
         var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(shaderProgram, "transform");
+        const location = gl.getUniformLocation(self.shaderProgram, "transform");
         gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -194,7 +186,7 @@ pub const Segment = struct {
             return SegmentErr.Error;
         }
 
-        const textureLoc = gl.getUniformLocation(shaderProgram, "texture1");
+        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
         gl.uniform1i(textureLoc, 0);
         e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -202,7 +194,7 @@ pub const Segment = struct {
             return SegmentErr.Error;
         }
 
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((indices.len))), gl.UNSIGNED_INT, null);
+        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
         if (e != gl.NO_ERROR) {
             std.debug.print("error: {d}\n", .{e});
             return SegmentErr.Error;
