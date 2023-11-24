@@ -3,19 +3,22 @@ const matrix = @import("../../math/matrix.zig");
 const gl = @import("zopengl");
 const glutils = @import("../../gl/gl.zig");
 const grid = @import("../../grid.zig");
+const state = @import("../../state.zig");
 
 pub const FoodErr = error{Error};
 const objectName = "food";
 
 pub const Food = struct {
+    state: *state.State,
     num_vertices: gl.Uint,
     vertices: [202]gl.Float, // 2 * (num_vertices + 1) because we need to add the center point
     indices: [299]gl.Uint, // 3 * (num_vertices - 1) because we need to add the center point
     VAO: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn init() !Food {
+    pub fn init(gameState: *state.State) !Food {
         var rv = Food{
+            .state = gameState,
             .num_vertices = 100,
             .vertices = undefined,
             .indices = undefined,
@@ -67,7 +70,7 @@ pub const Food = struct {
         }
     }
 
-    pub fn draw(self: Food, posX: gl.Float, posY: gl.Float, gameGrid: grid.Grid) !void {
+    pub fn draw(self: Food) !void {
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -81,7 +84,7 @@ pub const Food = struct {
             return FoodErr.Error;
         }
 
-        const transV = gameGrid.objectTransform(posX, posY);
+        const transV = self.state.grid.objectTransform(self.state.foodX, self.state.foodY);
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

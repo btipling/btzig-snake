@@ -82,13 +82,8 @@ pub fn run() !void {
     defer gameSound.destroy();
 
     try gameSound.playStartSound();
-    var seg = try segment.Segment.init();
-    var snakeHead = try head.Head.init();
-    var foodItem = try food.Food.init();
-    const gameGrid = grid.Grid.init(cfg.grid_size);
-    var bg = try background.Background.init();
-    var gameSplash = try splash.Splash.init();
 
+    const gameGrid = grid.Grid.init(cfg.grid_size);
     var gameState = try state.State.init(
         gameGrid,
         cfg.initial_speed,
@@ -98,30 +93,39 @@ pub fn run() !void {
         allocator,
         &gameSound,
     );
-    state.State.generateFoodPosition(&gameState);
+
+    var stateInst = &gameState;
+    stateInst.generateFoodPosition();
+
+    var seg = try segment.Segment.init(stateInst);
+    var snakeHead = try head.Head.init(stateInst);
+    var foodItem = try food.Food.init(stateInst);
+    var bg = try background.Background.init(stateInst);
+    var gameSplash = try splash.Splash.init(stateInst);
+
     var lastTick = std.time.milliTimestamp();
     main_loop: while (!window.shouldClose()) {
         glfw.pollEvents();
-        const quit = try controls.handleKey(&gameState, window);
+        const quit = try controls.handleKey(stateInst, window);
         if (quit) {
             break :main_loop;
         }
         if (std.time.milliTimestamp() - lastTick > gameState.delay) {
-            try state.State.move(&gameState);
+            try stateInst.move();
             lastTick = std.time.milliTimestamp();
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-        try bg.draw(gameState.grid);
         // set opengl blending to allow for transparency in textures
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        try snakeHead.draw(gameState.grid, &gameState);
-        try seg.draw(gameState.grid, &gameState);
-        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
-        try ui.draw(&gameState, window);
+        try bg.draw();
+        try snakeHead.draw();
+        try seg.draw();
+        try foodItem.draw();
+        try ui.draw(stateInst, window);
         if (gameState.paused) {
-            try gameSplash.draw(gameState.grid);
+            try gameSplash.draw();
         }
         window.swapBuffers();
     }

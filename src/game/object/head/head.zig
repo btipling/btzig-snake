@@ -44,13 +44,15 @@ const rightVertices: [16]gl.Float = [_]gl.Float{
 // zig fmt: on
 
 pub const Head = struct {
+    state: *state.State,
     indices: [6]gl.Uint,
     VAOs: [4]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn init() !Head {
+    pub fn init(gameState: *state.State) !Head {
         var rv = Head{
+            .state = gameState,
             .indices = [_]gl.Uint{
                 0, 1, 3,
                 1, 2, 3,
@@ -149,18 +151,18 @@ pub const Head = struct {
         return glutils.initProgram("HEAD", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
-    pub fn draw(self: Head, gameGrid: grid.Grid, gameState: *state.State) !void {
-        const headCoords = gameState.segments.items[0];
-        const posX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
-        const posY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
-        if (gameState.direction == .Left) {
-            try drawHead(self.shaderProgram, self.VAOs[0], self.texture, self.indices, posX, posY, gameGrid);
-        } else if (gameState.direction == .Right) {
-            try drawHead(self.shaderProgram, self.VAOs[1], self.texture, self.indices, posX, posY, gameGrid);
-        } else if (gameState.direction == .Up) {
-            try drawHead(self.shaderProgram, self.VAOs[2], self.texture, self.indices, posX, posY, gameGrid);
+    pub fn draw(self: Head) !void {
+        const headCoords = self.state.segments.items[0];
+        const posX: gl.Float = try self.state.grid.indexToGridPosition(headCoords.x);
+        const posY: gl.Float = try self.state.grid.indexToGridPosition(headCoords.y);
+        if (self.state.direction == .Left) {
+            try drawHead(self.shaderProgram, self.VAOs[0], self.texture, self.indices, posX, posY, self.state.grid);
+        } else if (self.state.direction == .Right) {
+            try drawHead(self.shaderProgram, self.VAOs[1], self.texture, self.indices, posX, posY, self.state.grid);
+        } else if (self.state.direction == .Up) {
+            try drawHead(self.shaderProgram, self.VAOs[2], self.texture, self.indices, posX, posY, self.state.grid);
         } else {
-            try drawHead(self.shaderProgram, self.VAOs[3], self.texture, self.indices, posX, posY, gameGrid);
+            try drawHead(self.shaderProgram, self.VAOs[3], self.texture, self.indices, posX, posY, self.state.grid);
         }
     }
 

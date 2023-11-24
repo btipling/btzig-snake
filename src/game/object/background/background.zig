@@ -4,20 +4,23 @@ const zstbi = @import("zstbi");
 const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
 const grid = @import("../../grid.zig");
+const state = @import("../../state.zig");
 
 pub const BackgroundErr = error{Error};
 const objectName = "background";
 
 pub const Background = struct {
+    state: *state.State,
     vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn init() !Background {
+    pub fn init(gameState: *state.State) !Background {
         std.debug.print("init background\n", .{});
         var rv = Background{
+            .state = gameState,
             .vertices = [_]gl.Float{
                 // zig fmt: off
                 // positions   // texture coords
@@ -70,7 +73,7 @@ pub const Background = struct {
         }
     }
 
-    pub fn draw(self: Background, gameGrid: grid.Grid) !void {
+    pub fn draw(self: Background) !void {
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -91,7 +94,7 @@ pub const Background = struct {
             return BackgroundErr.Error;
         }
 
-        const transV = gameGrid.bgTransform();
+        const transV = self.state.grid.bgTransform();
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

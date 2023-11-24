@@ -4,20 +4,23 @@ const zstbi = @import("zstbi");
 const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
 const grid = @import("../../grid.zig");
+const state = @import("../../state.zig");
 
 pub const SplashErr = error{Error};
 const objectName = "splash";
 
 pub const Splash = struct {
+    state: *state.State,
     vertices: [16]gl.Float,
     indices: [6]gl.Uint,
     VAO: gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn init() !Splash {
+    pub fn init(gameState: *state.State) !Splash {
         std.debug.print("init splash\n", .{});
         var rv = Splash{
+            .state = gameState,
             .vertices = [_]gl.Float{
                 // zig fmt: off
                 // positions   // texture coords
@@ -70,7 +73,10 @@ pub const Splash = struct {
         }
     }
 
-    pub fn draw(self: Splash, gameGrid: grid.Grid) !void {
+    pub fn draw(self: Splash) !void {
+        if (!self.state.paused) {
+            return;
+        }
         gl.useProgram(self.shaderProgram);
         var e = gl.getError();
         if (e != gl.NO_ERROR) {
@@ -91,7 +97,7 @@ pub const Splash = struct {
             return SplashErr.Error;
         }
 
-        const transV = gameGrid.gridTransformCenter();
+        const transV = self.state.grid.gridTransformCenter();
 
         var transform = matrix.scaleTranslateMat3(transV);
         const location = gl.getUniformLocation(self.shaderProgram, "transform");

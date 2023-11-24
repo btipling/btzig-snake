@@ -42,13 +42,15 @@ const rightVertices: [16]gl.Float = [_]gl.Float{
 // zig fmt: on
 
 pub const Segment = struct {
+    state: *state.State,
     indices: [6]gl.Uint,
     VAOs: [3]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn init() !Segment {
+    pub fn init(gameState: *state.State) !Segment {
         var rv = Segment{
+            .state = gameState,
             .indices = [_]gl.Uint{
                 0, 1, 3,
                 1, 2, 3,
@@ -144,11 +146,11 @@ pub const Segment = struct {
         return glutils.initProgram("SEGMENT", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
 
-    pub fn draw(self: Segment, gameGrid: grid.Grid, gameState: *state.State) !void {
-        for (gameState.segments.items[1..], 0..) |coords, i| {
-            const posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
-            const posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
-            try drawSegment(self.shaderProgram, self.VAOs[i % 2], self.texture, self.indices, posX, posY, gameGrid);
+    pub fn draw(self: Segment) !void {
+        for (self.state.segments.items[1..], 0..) |coords, i| {
+            const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
+            const posY: gl.Float = try self.state.grid.indexToGridPosition(coords.y);
+            try drawSegment(self.shaderProgram, self.VAOs[i % 2], self.texture, self.indices, posX, posY, self.state.grid);
         }
     }
 
