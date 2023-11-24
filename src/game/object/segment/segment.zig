@@ -137,16 +137,6 @@ pub const Segment = struct {
         }
     }
 
-    fn initVertexShader(_: Segment) !gl.Uint {
-        const vertexShaderSource: [:0]const u8 = @embedFile("shaders/segment.vs");
-        return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
-    }
-
-    fn initFragmentShader(_: Segment) !gl.Uint {
-        const fragmentShaderSource: [:0]const u8 = @embedFile("shaders/segment.fs");
-        return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
-    }
-
     fn initShaderProgram(self: Segment) !gl.Uint {
         return glutils.initProgram("SEGMENT", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }

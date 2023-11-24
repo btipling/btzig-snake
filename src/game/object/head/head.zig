@@ -150,16 +150,6 @@ pub const Head = struct {
         }
     }
 
-    fn initVertexShader(_: Head) !gl.Uint {
-        const vertexShaderSource: [:0]const u8 = @embedFile("shaders/head.vs");
-        return glutils.initShader("VERTEX", vertexShaderSource, gl.VERTEX_SHADER);
-    }
-
-    fn initFragmentShader(_: Head) !gl.Uint {
-        const fragmentShaderSource: [:0]const u8 = @embedFile("shaders/head.fs");
-        return glutils.initShader("FRAGMENT", fragmentShaderSource, gl.FRAGMENT_SHADER);
-    }
-
     fn initShaderProgram(self: Head) !gl.Uint {
         return glutils.initProgram("HEAD", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
     }
