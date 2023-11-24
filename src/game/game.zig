@@ -82,9 +82,7 @@ pub fn run() !void {
     defer gameSound.destroy();
 
     try gameSound.playStartSound();
-    var segSideways = try segment.Segment.initSideways();
-    var segLeft = try segment.Segment.initLeft();
-    var segRight = try segment.Segment.initRight();
+    var seg = try segment.Segment.init();
     var headRight = try head.Head.initRight();
     var headLeft = try head.Head.initLeft();
     var headUp = try head.Head.initUp();
@@ -133,16 +131,7 @@ pub fn run() !void {
         } else {
             try headDown.draw(headPosX, headPosY, gameState.grid);
         }
-        for (gameState.segments.items[1..], 0..) |coords, i| {
-            const posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
-            const posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
-            switch (i % 2) {
-                0 => try segSideways.draw(posX, posY, gameState.grid),
-                1 => try segLeft.draw(posX, posY, gameState.grid),
-                2 => try segRight.draw(posX, posY, gameState.grid),
-                else => {},
-            }
-        }
+        try seg.draw(gameState.grid, &gameState);
         try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
         try ui.draw(&gameState, window);
         if (gameState.paused) {
