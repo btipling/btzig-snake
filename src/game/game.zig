@@ -124,9 +124,7 @@ pub fn run() !void {
         try seg.draw();
         try foodItem.draw();
         try ui.draw(stateInst, window);
-        if (gameState.paused) {
-            try gameSplash.draw();
-        }
+        try gameSplash.draw();
         window.swapBuffers();
     }
 }
