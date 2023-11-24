@@ -1,9 +1,10 @@
 const std = @import("std");
 const glfw = @import("zglfw");
+const zaudio = @import("zaudio");
 const zgui = @import("zgui");
-const math = std.math;
 const gl = @import("zopengl");
 const zstbi = @import("zstbi");
+const math = std.math;
 const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
 const head = @import("object/head/head.zig");
@@ -14,6 +15,7 @@ const ui = @import("ui/ui.zig");
 const grid = @import("grid.zig");
 const state = @import("state.zig");
 const controls = @import("controls.zig");
+const sound = @import("sound.zig");
 
 const embedded_font_data = @embedFile("assets/fonts/PressStart2P-Regular.ttf");
 
@@ -39,6 +41,7 @@ pub fn run() !void {
     };
     defer window.destroy();
     window.setSizeLimits(800, 800, -1, -1);
+    window.setInputMode(glfw.InputMode.cursor, glfw.Cursor.Mode.disabled);
 
     glfw.makeContextCurrent(window);
     glfw.swapInterval(1);
@@ -70,6 +73,15 @@ pub fn run() !void {
     const font_large = zgui.io.addFontFromMemory(embedded_font_data, math.floor(font_size * 1.1));
     zgui.io.setDefaultFont(font_large);
 
+    zaudio.init(allocator);
+    defer zaudio.deinit();
+    const engine = try zaudio.Engine.create(null);
+    defer engine.destroy();
+
+    var gameSound = sound.Sound.init(engine);
+    defer gameSound.destroy();
+
+    try gameSound.playStartSound();
     var segSideways = try segment.Segment.initSideways();
     var segLeft = try segment.Segment.initLeft();
     var segRight = try segment.Segment.initRight();
@@ -89,6 +101,7 @@ pub fn run() !void {
         cfg.initial_start_x,
         cfg.initial_start_y,
         allocator,
+        &gameSound,
     );
     state.State.generateFoodPosition(&gameState);
     var lastTick = std.time.milliTimestamp();

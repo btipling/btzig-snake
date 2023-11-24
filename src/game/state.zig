@@ -1,6 +1,7 @@
 const std = @import("std");
 const gl = @import("zopengl");
 const grid = @import("grid.zig");
+const sound = @import("sound.zig");
 
 pub const coordinate = struct {
     x: gl.Float,
@@ -30,6 +31,7 @@ pub const State = struct {
     segments: std.ArrayList(coordinate),
     lastMove: i64,
     lastUI: i64,
+    sound: *sound.Sound,
 
     pub fn init(
         gameGrid: grid.Grid,
@@ -38,6 +40,7 @@ pub const State = struct {
         startX: gl.Float,
         startY: gl.Float,
         allocator: std.mem.Allocator,
+        gameSound: *sound.Sound,
     ) !State {
         var segments = std.ArrayList(coordinate).init(allocator);
         try segments.append(coordinate{ .x = startX, .y = startY });
@@ -55,6 +58,7 @@ pub const State = struct {
             .segments = segments,
             .lastMove = 0,
             .lastUI = 0,
+            .sound = gameSound,
         };
     }
 
@@ -102,6 +106,7 @@ pub const State = struct {
             // decrease delay exponentially
             self.delay = @as(gl.Uint, @intFromFloat(@as(gl.Float, @floatFromInt(self.delay)) * 0.9));
             std.debug.print("Score: {d} Delay: {d}\n", .{ newScore, self.delay });
+            try self.sound.playFoodSound();
         }
         var prevX: gl.Float = 0.0;
         var prevY: gl.Float = 0.0;
@@ -131,6 +136,7 @@ pub const State = struct {
         try self.segments.append(coordinate{ .x = self.initialStart.x, .y = self.initialStart.y });
         try self.segments.append(coordinate{ .x = self.initialStart.x - 1, .y = self.initialStart.y }); // start with a tail
         State.generateFoodPosition(self);
+        try self.sound.playGameOverSound();
     }
 
     pub fn detectCollision(self: *State) bool {
@@ -159,11 +165,16 @@ pub const State = struct {
 
     // pause
 
-    pub fn togglePause(self: *State) void {
+    pub fn togglePause(self: *State) !void {
         if (self.isUIThrottled()) {
             return;
         }
         self.paused = !self.paused;
+        if (self.paused) {
+            try self.sound.playPauseSound();
+        } else {
+            try self.sound.playUnPauseSound();
+        }
     }
 
     // direction
@@ -244,5 +255,6 @@ pub const State = struct {
             Direction.Up => try self.moveUp(),
             Direction.Down => try self.moveDown(),
         }
+        try self.sound.playMoveSound();
     }
 };

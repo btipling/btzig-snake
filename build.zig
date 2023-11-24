@@ -3,6 +3,7 @@ const zgui = @import("libs/zig-gamedev/libs/zgui/build.zig");
 const glfw = @import("libs/zig-gamedev/libs/zglfw/build.zig");
 const zopengl = @import("libs/zig-gamedev/libs/zopengl/build.zig");
 const zstbi = @import("libs/zig-gamedev/libs/zstbi/build.zig");
+const zaudio = @import("libs/zig-gamedev/libs/zaudio/build.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -31,11 +32,13 @@ pub fn build(b: *std.Build) void {
     const zglf_pkg = glfw.package(b, target, optimize, .{});
     const zopengl_pkg = zopengl.package(b, target, optimize, .{});
     const zstbi_pkg = zstbi.package(b, target, optimize, .{});
+    const zaudio_pkg = zaudio.package(b, target, optimize, .{});
 
     zgui_pkg.link(exe);
     zglf_pkg.link(exe);
     zopengl_pkg.link(exe);
     zstbi_pkg.link(exe);
+    zaudio_pkg.link(exe);
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
