@@ -58,7 +58,7 @@ pub fn handleKey(gameState: *state.State, window: *zglfw.Window) !bool {
         return false;
     }
     if (window.getKey(.p) == .press) {
-        state.State.togglePause(gameState);
+        try state.State.togglePause(gameState);
         return false;
     }
 

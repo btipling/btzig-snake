@@ -41,6 +41,7 @@ pub fn run() !void {
     };
     defer window.destroy();
     window.setSizeLimits(800, 800, -1, -1);
+    window.setInputMode(glfw.InputMode.cursor, glfw.Cursor.Mode.disabled);
 
     glfw.makeContextCurrent(window);
     glfw.swapInterval(1);
@@ -100,6 +101,7 @@ pub fn run() !void {
         cfg.initial_start_x,
         cfg.initial_start_y,
         allocator,
+        &gameSound,
     );
     state.State.generateFoodPosition(&gameState);
     var lastTick = std.time.milliTimestamp();
