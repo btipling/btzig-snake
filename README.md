@@ -2,5 +2,5 @@
  building a snake game with zig-gamedev 
 
  
-https://github.com/btipling/btzig-snake/assets/249641/8d442ef3-1d7d-4f94-8173-8dceddf18474
+https://github.com/btipling/btzig-snake/assets/249641/5233ef69-ef85-4f33-9450-bc77adc5f4bd
 
