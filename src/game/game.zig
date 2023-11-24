@@ -83,12 +83,9 @@ pub fn run() !void {
 
     try gameSound.playStartSound();
     var seg = try segment.Segment.init();
-    var headRight = try head.Head.initRight();
-    var headLeft = try head.Head.initLeft();
-    var headUp = try head.Head.initUp();
-    var headDown = try head.Head.initDown();
+    var snakeHead = try head.Head.init();
     var foodItem = try food.Food.init();
-    var gameGrid = grid.Grid.init(cfg.grid_size);
+    const gameGrid = grid.Grid.init(cfg.grid_size);
     var bg = try background.Background.init();
     var gameSplash = try splash.Splash.init();
 
@@ -119,18 +116,7 @@ pub fn run() !void {
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        const headCoords = gameState.segments.items[0];
-        const headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
-        const headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
-        if (gameState.direction == .Left) {
-            try headLeft.draw(headPosX, headPosY, gameState.grid);
-        } else if (gameState.direction == .Right) {
-            try headRight.draw(headPosX, headPosY, gameState.grid);
-        } else if (gameState.direction == .Up) {
-            try headUp.draw(headPosX, headPosY, gameState.grid);
-        } else {
-            try headDown.draw(headPosX, headPosY, gameState.grid);
-        }
+        try snakeHead.draw(gameState.grid, &gameState);
         try seg.draw(gameState.grid, &gameState);
         try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
         try ui.draw(&gameState, window);
