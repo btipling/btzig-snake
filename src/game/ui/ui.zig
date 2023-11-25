@@ -7,7 +7,7 @@ const segment = @import("../object/segment/segment.zig");
 pub const UI = struct {
     state: *state.State,
     window: *glfw.Window,
-    demoSnake: [36]state.coordinate,
+    demoSnake: [41]state.coordinate,
     segment: segment.Segment,
 
     pub fn init(gameState: *state.State, window: *glfw.Window, seg: segment.Segment) !UI {
@@ -15,6 +15,10 @@ pub const UI = struct {
             .state = gameState,
             .window = window,
             .demoSnake = .{
+                .{ .x = 4, .y = 5 },
+                .{ .x = 5, .y = 5 },
+                .{ .x = 6, .y = 5 },
+                .{ .x = 6, .y = 4 },
                 .{ .x = 6, .y = 3 },
                 .{ .x = 5, .y = 3 },
                 .{ .x = 4, .y = 3 },
@@ -45,20 +49,20 @@ pub const UI = struct {
                 .{ .x = 19, .y = 3 },
                 .{ .x = 18, .y = 3 },
                 .{ .x = 17, .y = 3 },
-
                 .{ .x = 16, .y = 3 },
                 .{ .x = 15, .y = 3 },
                 .{ .x = 14, .y = 3 },
-                .{ .x = 13, .y = 3 },
-                .{ .x = 12, .y = 3 },
-                .{ .x = 11, .y = 3 },
+                .{ .x = 14, .y = 4 },
+                .{ .x = 14, .y = 5 },
+                .{ .x = 15, .y = 5 },
+                .{ .x = 16, .y = 5 },
             },
             .segment = seg,
         };
     }
 
     pub fn draw(self: UI) !void {
-        try self.segment.drawDemoSnake(&self.demoSnake, state.Direction.Right);
+        try self.segment.drawDemoSnake(&self.demoSnake, state.Direction.Left);
         try self.drawSidebar();
     }
 
