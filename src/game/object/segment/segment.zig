@@ -158,7 +158,10 @@ pub const Segment = struct {
     }
 
     pub fn draw(self: Segment) !void {
-        for (self.state.segments.items[1..], 0..) |coords, i| {
+        for (self.state.segments.items[0..], 0..) |coords, i| {
+            if (i == 0) {
+                continue;
+            }
             const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
             const posY: gl.Float = try self.state.grid.indexToGridPosition(coords.y);
             if (self.isSegmentAtIndexHorizontal(i)) {
