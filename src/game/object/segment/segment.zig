@@ -27,13 +27,13 @@ const horizontalVertices: [16]gl.Float = [_]gl.Float{
 
 const verticalVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
-                // ◳            // ◰
+                // ◳            // ◱
                 1,  1,          0.25, 1.0,
-                // ◲           // ◳      
+                // ◲           // ◲       
                 1,  -1,         0.5, 1.0,
-                // ◱           // ◲
+                // ◱           // ◳
                 -1, -1,         0.5, 0.0,
-                // ◰           // ◱   
+                // ◰           // ◰  
                 -1, 1,          0.25, 0.0,
 };
 
@@ -48,12 +48,65 @@ const bankDownRightVertices: [16]gl.Float = [_]gl.Float{
 const bankDownLeftVertices = verticalVertices;
 
 const bankRightDownVertices = horizontalVertices;
+
+
+const downTailVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳            // ◱   
+                1,  1,          0.75, 1.0,
+                // ◲           // ◲   
+                1,  -1,         1.0, 1.0,
+                // ◱           // ◳
+                -1, -1,         1.0, 0.0,
+                // ◰           // ◰ 
+                -1, 1,          0.75, 0.0,
+};
+
+const upTailVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳           // ◲   
+                1,  1,          1.0, 1.0,
+                // ◲           // ◱ 
+                1, -1,          0.75, 1.0,
+                // ◱           // ◰  
+                -1, -1,         0.75, 0.0,
+                // ◰           // ◳ 
+                -1, 1,          1.0, 0.0,
+};
+
+const rightTailVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳           // ◳    
+                1,  1,          1.0, 0.0,
+                // ◲           // ◲ 
+                1,  -1,         1.0, 1.0,
+                // ◱           // ◱  
+                -1, -1,         0.75, 1.0,
+                // ◰           // ◰ 
+                -1, 1,          0.75, 0.0
+};
+
+
+
+const leftTailVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳           // ◰   
+                1,  1,         0.75, 0.0,
+                // ◲           // ◱
+                1,  -1,         0.75, 1.0,
+                // ◱           // ◲ 
+                -1, -1,         1.0, 1.0,
+                // ◰           // ◳ 
+                -1, 1,          1.0, 0.0,
+};
 // zig fmt: on
+
+const num_vaos: comptime_int = 10;
 
 pub const Segment = struct {
     state: *state.State,
     indices: [6]gl.Uint,
-    VAOs: [6]gl.Uint,
+    VAOs: [num_vaos]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
     snakeHead: head.Head,
@@ -66,25 +119,22 @@ pub const Segment = struct {
                 0, 1, 3,
                 1, 2, 3,
             },
-            .VAOs = [_]gl.Uint{
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-            },
+            .VAOs = [_]gl.Uint{undefined} ** num_vaos,
             .texture = undefined,
             .shaderProgram = undefined,
             .snakeHead = snakeHead,
         };
-        const combinedVertices = [6][16]gl.Float{
+        const combinedVertices = [_][16]gl.Float{
             bankUpLeftVertices,
             bankDownLeftVertices,
             horizontalVertices,
             verticalVertices,
             bankRightDownVertices,
             bankDownRightVertices,
+            downTailVertices,
+            upTailVertices,
+            rightTailVertices,
+            leftTailVertices,
         };
         for (combinedVertices, 0..) |vertices, i| {
             const VAO = try glutils.initVAO(objectName);
@@ -180,9 +230,37 @@ pub const Segment = struct {
         return self.drawSegments(segments, offGrid);
     }
 
+    pub fn drawTail(self: Segment, segments: []const state.coordinate, offGrid: ?[2]gl.Float) !void {
+        if (segments.len < 2) {
+            std.debug.print("tail draw error: segments.len < 2\n", .{});
+            return;
+        }
+        const tail = segments[segments.len - 1];
+        const bef = segments[segments.len - 2];
+        if (bef.y + 1 == tail.y) {
+            // if bef y is less than tail y then bef y + 1 is equal and tail is going down
+            try self.drawSegment(self.VAOs[6], tail.x, tail.y, offGrid);
+            return;
+        }
+        if (bef.y - 1 == tail.y) {
+            // if bef y is greater than tail y then bef y - 1 is equal and tail is going up
+            try self.drawSegment(self.VAOs[7], tail.x, tail.y, offGrid);
+            return;
+        }
+        if (bef.x + 1 == tail.x) {
+            try self.drawSegment(self.VAOs[8], tail.x, tail.y, offGrid);
+            return;
+        }
+        try self.drawSegment(self.VAOs[9], tail.x, tail.y, offGrid);
+    }
+
     pub fn drawSegments(self: Segment, segments: []const state.coordinate, offGrid: ?[2]gl.Float) !void {
         for (segments[0..], 0..) |coords, i| {
             if (i == 0) {
+                continue;
+            }
+            if (i == segments.len - 1) {
+                try self.drawTail(segments, offGrid);
                 continue;
             }
             const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
