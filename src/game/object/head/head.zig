@@ -151,21 +151,29 @@ pub const Head = struct {
 
     pub fn draw(self: Head) !void {
         const headCoords = self.state.segments.items[0];
-        const posX: gl.Float = try self.state.grid.indexToGridPosition(headCoords.x);
-        const posY: gl.Float = try self.state.grid.indexToGridPosition(headCoords.y);
-        if (self.state.direction == .Left) {
-            try self.drawHead(self.VAOs[0], posX, posY);
-        } else if (self.state.direction == .Right) {
-            try self.drawHead(self.VAOs[1], posX, posY);
-        } else if (self.state.direction == .Up) {
-            try self.drawHead(self.VAOs[2], posX, posY);
+        return self.drawAt(headCoords.x, headCoords.y, self.state.direction, null);
+    }
+
+    pub fn drawAt(self: Head, x: gl.Float, y: gl.Float, direction: state.Direction, offGrid: ?[2]gl.Float) !void {
+        const posX: gl.Float = try self.state.grid.indexToGridPosition(x);
+        const posY: gl.Float = try self.state.grid.indexToGridPosition(y);
+        if (direction == .Left) {
+            try self.drawHead(self.VAOs[0], posX, posY, offGrid);
+        } else if (direction == .Right) {
+            try self.drawHead(self.VAOs[1], posX, posY, offGrid);
+        } else if (direction == .Up) {
+            try self.drawHead(self.VAOs[2], posX, posY, offGrid);
         } else {
-            try self.drawHead(self.VAOs[3], posX, posY);
+            try self.drawHead(self.VAOs[3], posX, posY, offGrid);
         }
     }
 
-    fn drawHead(self: Head, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
-        const transV = self.state.grid.objectTransform(posX, posY);
+    fn drawHead(self: Head, VAO: gl.Uint, posX: gl.Float, posY: gl.Float, offGrid: ?[2]gl.Float) !void {
+        var transV = self.state.grid.objectTransform(posX, posY);
+        if (offGrid) |offset| {
+            transV[2] += offset[0];
+            transV[3] += offset[1];
+        }
         try glutils.draw(self.shaderProgram, VAO, self.texture, &self.indices, transV);
     }
 };

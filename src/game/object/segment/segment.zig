@@ -3,15 +3,10 @@ const gl = @import("zopengl");
 const zstbi = @import("zstbi");
 const glutils = @import("../../gl/gl.zig");
 const state = @import("../../state.zig");
+const head = @import("../head/head.zig");
 
 pub const SegmentErr = error{Error};
 const objectName = "segment";
-
-const SegmentType = enum(u2) {
-    Sideways = 0,
-    Left = 1,
-    Right = 2,
-};
 
 // zig fmt: off
 const sideWaysVertices: [16]gl.Float = [_]gl.Float{
@@ -57,8 +52,10 @@ pub const Segment = struct {
     VAOs: [4]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
+    snakeHead: head.Head,
 
     pub fn init(gameState: *state.State) !Segment {
+        const snakeHead = try head.Head.init(gameState);
         var rv = Segment{
             .state = gameState,
             .indices = [_]gl.Uint{
@@ -73,6 +70,7 @@ pub const Segment = struct {
             },
             .texture = undefined,
             .shaderProgram = undefined,
+            .snakeHead = snakeHead,
         };
         const combinedVertices = [4][16]gl.Float{ sideWaysVertices, leftVertices, horizontalVertices, verticalVertices };
         for (combinedVertices, 0..) |vertices, i| {
@@ -158,56 +156,72 @@ pub const Segment = struct {
     }
 
     pub fn draw(self: Segment) !void {
-        for (self.state.segments.items[0..], 0..) |coords, i| {
+        try self.snakeHead.draw();
+        return self.drawSegments(self.state.segments.items, null);
+    }
+
+    pub fn drawDemoSnake(self: Segment, segments: []const state.coordinate, direction: state.Direction) !void {
+        const coords = segments[0];
+        const offGrid = [2]gl.Float{ 1.3, -0.025 };
+        try self.snakeHead.drawAt(coords.x, coords.y, direction, offGrid);
+        return self.drawSegments(segments, offGrid);
+    }
+
+    pub fn drawSegments(self: Segment, segments: []const state.coordinate, offGrid: ?[2]gl.Float) !void {
+        for (segments[0..], 0..) |coords, i| {
             if (i == 0) {
                 continue;
             }
             const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
             const posY: gl.Float = try self.state.grid.indexToGridPosition(coords.y);
-            if (self.isSegmentAtIndexHorizontal(i)) {
-                try self.drawSegment(self.VAOs[2], posX, posY);
+            if (isSegmentAtIndexHorizontal(segments, i)) {
+                try self.drawSegment(self.VAOs[2], posX, posY, offGrid);
                 continue;
             }
-            if (self.isSegmentAtIndexVertical(i)) {
-                try self.drawSegment(self.VAOs[3], posX, posY);
+            if (isSegmentAtIndexVertical(segments, i)) {
+                try self.drawSegment(self.VAOs[3], posX, posY, offGrid);
                 continue;
             }
-            try self.drawSegment(self.VAOs[i % 2], posX, posY);
+            try self.drawSegment(self.VAOs[i % 2], posX, posY, offGrid);
         }
     }
 
-    fn isSegmentAtIndexVertical(self: Segment, index: usize) bool {
+    fn isSegmentAtIndexVertical(segments: []const state.coordinate, index: usize) bool {
         var sidewaysNeighbors: u2 = 0;
-        if (self.state.segments.items.len == index + 1) {
+        if (segments.len == index + 1) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].x == self.state.segments.items[index + 1].x) {
+        } else if (segments[index].x == segments[index + 1].x) {
             sidewaysNeighbors += 1;
         }
         if (index == 0) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].x == self.state.segments.items[index - 1].x) {
+        } else if (segments[index].x == segments[index - 1].x) {
             sidewaysNeighbors += 1;
         }
         return sidewaysNeighbors == 2;
     }
 
-    fn isSegmentAtIndexHorizontal(self: Segment, index: usize) bool {
+    fn isSegmentAtIndexHorizontal(segments: []const state.coordinate, index: usize) bool {
         var sidewaysNeighbors: u2 = 0;
-        if (self.state.segments.items.len == index + 1) {
+        if (segments.len == index + 1) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].y == self.state.segments.items[index + 1].y) {
+        } else if (segments[index].y == segments[index + 1].y) {
             sidewaysNeighbors += 1;
         }
         if (index == 0) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].y == self.state.segments.items[index - 1].y) {
+        } else if (segments[index].y == segments[index - 1].y) {
             sidewaysNeighbors += 1;
         }
         return sidewaysNeighbors == 2;
     }
 
-    fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
-        const transV = self.state.grid.objectTransform(posX, posY);
+    fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float, offGrid: ?[2]gl.Float) !void {
+        var transV = self.state.grid.objectTransform(posX, posY);
+        if (offGrid) |offset| {
+            transV[2] += offset[0];
+            transV[3] += offset[1];
+        }
         try glutils.draw(self.shaderProgram, VAO, self.texture, &self.indices, transV);
     }
 };

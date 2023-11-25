@@ -8,7 +8,7 @@ pub const coordinate = struct {
     y: gl.Float,
 };
 
-const Direction = enum(i32) {
+pub const Direction = enum(i32) {
     Left,
     Right,
     Up,

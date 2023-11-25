@@ -7,7 +7,6 @@ const zstbi = @import("zstbi");
 const math = std.math;
 const cfg = @import("config.zig");
 const segment = @import("object/segment/segment.zig");
-const head = @import("object/head/head.zig");
 const food = @import("object/food/food.zig");
 const background = @import("object/background/background.zig");
 const splash = @import("object/splash/splash.zig");
@@ -97,11 +96,11 @@ pub fn run() !void {
     var stateInst = &gameState;
     stateInst.generateFoodPosition();
 
-    var seg = try segment.Segment.init(stateInst);
-    var snakeHead = try head.Head.init(stateInst);
+    var snake = try segment.Segment.init(stateInst);
     var foodItem = try food.Food.init(stateInst);
     var bg = try background.Background.init(stateInst);
     var gameSplash = try splash.Splash.init(stateInst);
+    var gameUI = try ui.UI.init(stateInst, window, snake);
 
     var lastTick = std.time.milliTimestamp();
     main_loop: while (!window.shouldClose()) {
@@ -120,11 +119,11 @@ pub fn run() !void {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         try bg.draw();
-        try snakeHead.draw();
-        try seg.draw();
+        try snake.draw();
         try foodItem.draw();
-        try ui.draw(stateInst, window);
+        try gameUI.draw();
         try gameSplash.draw();
+
         window.swapBuffers();
     }
 }
