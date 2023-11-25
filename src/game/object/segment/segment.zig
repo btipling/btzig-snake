@@ -30,19 +30,31 @@ const leftVertices: [16]gl.Float = [_]gl.Float{
                 -1, 1,          0.5, 1,
 };
 
-const rightVertices: [16]gl.Float = [_]gl.Float{
+const horizontalVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
-                1,  1,          0, 1,
-                1,  -1,         0, 0,
-                -1, -1,         0.5, 0,
-                -1, 1,          0.5, 1,
+                1,  1,          0.5, 1,
+                1,  -1,         0.5, 0,
+                -1, -1,         0, 0,
+                -1, 1,          0, 1,
+};
+
+const verticalVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳            // ◰
+                1,  1,          0.0, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.5, 1.0,
+                // ◱           // ◲
+                -1, -1,         0.5, 0.0,
+                // ◰           // ◱   
+                -1, 1,          0.0, 0.0,
 };
 // zig fmt: on
 
 pub const Segment = struct {
     state: *state.State,
     indices: [6]gl.Uint,
-    VAOs: [3]gl.Uint,
+    VAOs: [4]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
 
@@ -57,11 +69,12 @@ pub const Segment = struct {
                 undefined,
                 undefined,
                 undefined,
+                undefined,
             },
             .texture = undefined,
             .shaderProgram = undefined,
         };
-        const combinedVertices = [3][16]gl.Float{ sideWaysVertices, leftVertices, rightVertices };
+        const combinedVertices = [4][16]gl.Float{ sideWaysVertices, leftVertices, horizontalVertices, verticalVertices };
         for (combinedVertices, 0..) |vertices, i| {
             const VAO = try glutils.initVAO(objectName);
             _ = try glutils.initVBO(objectName);
@@ -148,8 +161,46 @@ pub const Segment = struct {
         for (self.state.segments.items[1..], 0..) |coords, i| {
             const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
             const posY: gl.Float = try self.state.grid.indexToGridPosition(coords.y);
+            if (self.isSegmentAtIndexHorizontal(i)) {
+                try self.drawSegment(self.VAOs[2], posX, posY);
+                continue;
+            }
+            if (self.isSegmentAtIndexVertical(i)) {
+                try self.drawSegment(self.VAOs[3], posX, posY);
+                continue;
+            }
             try self.drawSegment(self.VAOs[i % 2], posX, posY);
         }
+    }
+
+    fn isSegmentAtIndexVertical(self: Segment, index: usize) bool {
+        var sidewaysNeighbors: u2 = 0;
+        if (self.state.segments.items.len == index + 1) {
+            sidewaysNeighbors += 1;
+        } else if (self.state.segments.items[index].x == self.state.segments.items[index + 1].x) {
+            sidewaysNeighbors += 1;
+        }
+        if (index == 0) {
+            sidewaysNeighbors += 1;
+        } else if (self.state.segments.items[index].x == self.state.segments.items[index - 1].x) {
+            sidewaysNeighbors += 1;
+        }
+        return sidewaysNeighbors == 2;
+    }
+
+    fn isSegmentAtIndexHorizontal(self: Segment, index: usize) bool {
+        var sidewaysNeighbors: u2 = 0;
+        if (self.state.segments.items.len == index + 1) {
+            sidewaysNeighbors += 1;
+        } else if (self.state.segments.items[index].y == self.state.segments.items[index + 1].y) {
+            sidewaysNeighbors += 1;
+        }
+        if (index == 0) {
+            sidewaysNeighbors += 1;
+        } else if (self.state.segments.items[index].y == self.state.segments.items[index - 1].y) {
+            sidewaysNeighbors += 1;
+        }
+        return sidewaysNeighbors == 2;
     }
 
     fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
