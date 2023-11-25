@@ -3,62 +3,63 @@ const gl = @import("zopengl");
 const zstbi = @import("zstbi");
 const glutils = @import("../../gl/gl.zig");
 const state = @import("../../state.zig");
+const head = @import("../head/head.zig");
 
 pub const SegmentErr = error{Error};
 const objectName = "segment";
 
-const SegmentType = enum(u2) {
-    Sideways = 0,
-    Left = 1,
-    Right = 2,
-};
-
 // zig fmt: off
-const sideWaysVertices: [16]gl.Float = [_]gl.Float{
+const bankUpLeftVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 1,  1,          0.5, 1,
                 1,  -1,         0.5, 0,
-                -1, -1,         1, 0,
-                -1, 1,          1, 1,
-};
-
-const leftVertices: [16]gl.Float = [_]gl.Float{
-                // positions   // texture coords
-                1,  1,          1, 1,
-                1,  -1,         1, 0,
-                -1, -1,         0.5, 0,
-                -1, 1,          0.5, 1,
+                -1, -1,         0.75, 0,
+                -1, 1,          0.75, 1,
 };
 
 const horizontalVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 1,  1,          0.5, 1,
                 1,  -1,         0.5, 0,
-                -1, -1,         0, 0,
-                -1, 1,          0, 1,
+                -1, -1,         0.25, 0,
+                -1, 1,          0.25, 1,
 };
 
 const verticalVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 // ◳            // ◰
-                1,  1,          0.0, 1.0,
+                1,  1,          0.25, 1.0,
                 // ◲           // ◳      
                 1,  -1,         0.5, 1.0,
                 // ◱           // ◲
                 -1, -1,         0.5, 0.0,
                 // ◰           // ◱   
-                -1, 1,          0.0, 0.0,
+                -1, 1,          0.25, 0.0,
 };
+
+const bankDownRightVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                 1,   1,         0.25, 1,
+                 1,  -1,         0.25, 0,
+                -1,  -1,         0.00, 0,
+                -1,   1,         0.00, 1,
+};
+
+const bankDownLeftVertices = verticalVertices;
+
+const bankRightDownVertices = horizontalVertices;
 // zig fmt: on
 
 pub const Segment = struct {
     state: *state.State,
     indices: [6]gl.Uint,
-    VAOs: [4]gl.Uint,
+    VAOs: [6]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
+    snakeHead: head.Head,
 
     pub fn init(gameState: *state.State) !Segment {
+        const snakeHead = try head.Head.init(gameState);
         var rv = Segment{
             .state = gameState,
             .indices = [_]gl.Uint{
@@ -70,11 +71,21 @@ pub const Segment = struct {
                 undefined,
                 undefined,
                 undefined,
+                undefined,
+                undefined,
             },
             .texture = undefined,
             .shaderProgram = undefined,
+            .snakeHead = snakeHead,
         };
-        const combinedVertices = [4][16]gl.Float{ sideWaysVertices, leftVertices, horizontalVertices, verticalVertices };
+        const combinedVertices = [6][16]gl.Float{
+            bankUpLeftVertices,
+            bankDownLeftVertices,
+            horizontalVertices,
+            verticalVertices,
+            bankRightDownVertices,
+            bankDownRightVertices,
+        };
         for (combinedVertices, 0..) |vertices, i| {
             const VAO = try glutils.initVAO(objectName);
             _ = try glutils.initVBO(objectName);
@@ -158,56 +169,254 @@ pub const Segment = struct {
     }
 
     pub fn draw(self: Segment) !void {
-        for (self.state.segments.items[0..], 0..) |coords, i| {
+        try self.snakeHead.draw();
+        return self.drawSegments(self.state.segments.items, null);
+    }
+
+    pub fn drawDemoSnake(self: Segment, segments: []const state.coordinate, direction: state.Direction) !void {
+        const coords = segments[0];
+        const offGrid = [2]gl.Float{ 1.3, -0.02 };
+        try self.snakeHead.drawAt(coords.x, coords.y, direction, offGrid);
+        return self.drawSegments(segments, offGrid);
+    }
+
+    pub fn drawSegments(self: Segment, segments: []const state.coordinate, offGrid: ?[2]gl.Float) !void {
+        for (segments[0..], 0..) |coords, i| {
             if (i == 0) {
                 continue;
             }
             const posX: gl.Float = try self.state.grid.indexToGridPosition(coords.x);
             const posY: gl.Float = try self.state.grid.indexToGridPosition(coords.y);
-            if (self.isSegmentAtIndexHorizontal(i)) {
-                try self.drawSegment(self.VAOs[2], posX, posY);
+            if (isSegmentAtIndexHorizontal(segments, i)) {
+                try self.drawSegment(self.VAOs[2], posX, posY, offGrid);
                 continue;
             }
-            if (self.isSegmentAtIndexVertical(i)) {
-                try self.drawSegment(self.VAOs[3], posX, posY);
+            if (isSegmentAtIndexVertical(segments, i)) {
+                try self.drawSegment(self.VAOs[3], posX, posY, offGrid);
                 continue;
             }
-            try self.drawSegment(self.VAOs[i % 2], posX, posY);
+            if (isSegmentBankingUpLeft(segments, i)) {
+                try self.drawSegment(self.VAOs[0], posX, posY, offGrid);
+                continue;
+            }
+            if (isSegmentBankingDownLeft(segments, i)) {
+                try self.drawSegment(self.VAOs[1], posX, posY, offGrid);
+                continue;
+            }
+            if (isSegmentBankingRightDown(segments, i)) {
+                try self.drawSegment(self.VAOs[4], posX, posY, offGrid);
+                continue;
+            }
+            if (isSegmentBankingDownRight(segments, i)) {
+                try self.drawSegment(self.VAOs[5], posX, posY, offGrid);
+                continue;
+            }
+            try self.drawSegment(self.VAOs[2], posX, posY, offGrid);
         }
     }
 
-    fn isSegmentAtIndexVertical(self: Segment, index: usize) bool {
+    fn isSegmentAtIndexVertical(segments: []const state.coordinate, index: usize) bool {
         var sidewaysNeighbors: u2 = 0;
-        if (self.state.segments.items.len == index + 1) {
+        if (segments.len == index + 1) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].x == self.state.segments.items[index + 1].x) {
+        } else if (segments[index].x == segments[index + 1].x) {
             sidewaysNeighbors += 1;
         }
         if (index == 0) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].x == self.state.segments.items[index - 1].x) {
+        } else if (segments[index].x == segments[index - 1].x) {
             sidewaysNeighbors += 1;
         }
         return sidewaysNeighbors == 2;
     }
 
-    fn isSegmentAtIndexHorizontal(self: Segment, index: usize) bool {
+    fn isSegmentAtIndexHorizontal(segments: []const state.coordinate, index: usize) bool {
         var sidewaysNeighbors: u2 = 0;
-        if (self.state.segments.items.len == index + 1) {
+        if (segments.len == index + 1) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].y == self.state.segments.items[index + 1].y) {
+        } else if (segments[index].y == segments[index + 1].y) {
             sidewaysNeighbors += 1;
         }
         if (index == 0) {
             sidewaysNeighbors += 1;
-        } else if (self.state.segments.items[index].y == self.state.segments.items[index - 1].y) {
+        } else if (segments[index].y == segments[index - 1].y) {
             sidewaysNeighbors += 1;
         }
         return sidewaysNeighbors == 2;
     }
 
-    fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
-        const transV = self.state.grid.objectTransform(posX, posY);
+    fn isSegmentBankingUpLeft(segments: []const state.coordinate, index: usize) bool {
+        if (index == 0) {
+            // index is head
+            return false;
+        }
+        if (segments.len == index + 1) {
+            // index is tail
+            return false;
+        }
+        const bef = segments[index - 1];
+        const cur = segments[index];
+        const aft = segments[index + 1];
+        // grid origin top left is 0, 0, arrow represents before
+        //
+        // before
+        // ←--| current
+        //    | after
+        //
+        // before is left at same y
+        if (bef.x + 1 == cur.x and bef.y == cur.y) {
+            // and after is below at same x
+            if (aft.x == cur.x and aft.y - 1 == cur.y) {
+                return true;
+            }
+        }
+        // or
+        //
+        // after
+        // ---| current
+        //    ↓ before
+        //
+        // before is below at same x
+        if (bef.x == cur.x and bef.y - 1 == cur.y) {
+            // and after is left at same y:
+            if (aft.x + 1 == cur.x and aft.y == cur.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn isSegmentBankingDownLeft(segments: []const state.coordinate, index: usize) bool {
+        if (index == 0) {
+            // index is head
+            return false;
+        }
+        if (segments.len == index + 1) {
+            // index is tail
+            return false;
+        }
+        const bef = segments[index - 1];
+        const cur = segments[index];
+        const aft = segments[index + 1];
+        // grid origin top left is 0, 0, arrow represents before
+        //
+        //    | after
+        // ←--| current
+        // before
+        //
+        // before is left at same y
+        if (bef.x + 1 == cur.x and bef.y == cur.y) {
+            // and after is above at same x
+            if (aft.x == cur.x and aft.y + 1 == cur.y) {
+                return true;
+            }
+        }
+        // or
+        //
+        //    ↑ before
+        // ---| current
+        // after
+        //
+        // before is above at same x
+        if (bef.x == cur.x and bef.y + 1 == cur.y) {
+            // and after is left at same y:
+            if (aft.x + 1 == cur.x and aft.y == cur.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn isSegmentBankingRightDown(segments: []const state.coordinate, index: usize) bool {
+        if (index == 0) {
+            // index is head
+            return false;
+        }
+        if (segments.len == index + 1) {
+            // index is tail
+            return false;
+        }
+        const bef = segments[index - 1];
+        const cur = segments[index];
+        const aft = segments[index + 1];
+        // grid origin top left is 0, 0, arrow represents before
+        //
+        //          after
+        // current |---
+        // before  ↓
+        //
+        // before below at same x
+        if (bef.x == cur.x and bef.y - 1 == cur.y) {
+            // and after is right at same y
+            if (aft.x - 1 == cur.x and aft.y == cur.y) {
+                return true;
+            }
+        }
+        // or
+        //
+        //          before
+        // current |--→
+        // after   |
+        //
+        // before is right at same y
+        if (bef.x - 1 == cur.x and bef.y == cur.y) {
+            // and after is below at same x:
+            if (aft.x == cur.x and aft.y - 1 == cur.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn isSegmentBankingDownRight(segments: []const state.coordinate, index: usize) bool {
+        if (index == 0) {
+            // index is head
+            return false;
+        }
+        if (segments.len == index + 1) {
+            // index is tail
+            return false;
+        }
+        const bef = segments[index - 1];
+        const cur = segments[index];
+        const aft = segments[index + 1];
+        // grid origin top left is 0, 0, arrow represents before
+        //
+        //
+        // before  ↑
+        // current |---
+        //          after
+        //
+        // before above at same x
+        if (bef.x == cur.x and bef.y + 1 == cur.y) {
+            // and after is right at same y
+            if (aft.x - 1 == cur.x and aft.y == cur.y) {
+                return true;
+            }
+        }
+        // or
+        //
+        //
+        // after   |
+        // current |--→
+        //          before
+        //
+        // before is right at same y
+        if (bef.x - 1 == cur.x and bef.y == cur.y) {
+            // and after is above at same x:
+            if (aft.x == cur.x and aft.y + 1 == cur.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float, offGrid: ?[2]gl.Float) !void {
+        var transV = self.state.grid.objectTransform(posX, posY);
+        if (offGrid) |offset| {
+            transV[2] += offset[0];
+            transV[3] += offset[1];
+        }
         try glutils.draw(self.shaderProgram, VAO, self.texture, &self.indices, transV);
     }
 };
