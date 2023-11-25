@@ -77,49 +77,7 @@ pub const Splash = struct {
         if (!self.state.paused) {
             return;
         }
-        gl.useProgram(self.shaderProgram);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("use program error: {d}\n", .{e});
-            return SplashErr.Error;
-        }
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, self.texture);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("bind texture error: {d}\n", .{e});
-            return SplashErr.Error;
-        }
-        gl.bindVertexArray(self.VAO);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("bind vertex error: {d}\n", .{e});
-            return SplashErr.Error;
-        }
-
         const transV = self.state.grid.gridTransformCenter();
-
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(self.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SplashErr.Error;
-        }
-
-        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
-        gl.uniform1i(textureLoc, 0);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SplashErr.Error;
-        }
-
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SplashErr.Error;
-        }
+        try glutils.draw(self.shaderProgram, self.VAO, self.texture, &self.indices, transV);
     }
 };

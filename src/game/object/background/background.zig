@@ -74,49 +74,7 @@ pub const Background = struct {
     }
 
     pub fn draw(self: Background) !void {
-        gl.useProgram(self.shaderProgram);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("use program error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, self.texture);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("bind texture error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-        gl.bindVertexArray(self.VAO);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("bind vertex error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-
         const transV = self.state.grid.bgTransform();
-
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(self.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-
-        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
-        gl.uniform1i(textureLoc, 0);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
-
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return BackgroundErr.Error;
-        }
+        try glutils.draw(self.shaderProgram, self.VAO, self.texture, &self.indices, transV);
     }
 };

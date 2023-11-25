@@ -71,34 +71,7 @@ pub const Food = struct {
     }
 
     pub fn draw(self: Food) !void {
-        gl.useProgram(self.shaderProgram);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
-        gl.bindVertexArray(self.VAO);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
-
         const transV = self.state.grid.objectTransform(self.state.foodX, self.state.foodY);
-
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(self.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
-
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
+        try glutils.draw(self.shaderProgram, self.VAO, null, &self.indices, transV);
     }
 };

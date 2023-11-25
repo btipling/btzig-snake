@@ -155,49 +155,7 @@ pub const Segment = struct {
     }
 
     fn drawSegment(self: Segment, VAO: gl.Uint, posX: gl.Float, posY: gl.Float) !void {
-        gl.useProgram(self.shaderProgram);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, self.texture);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("bind texture error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-        gl.bindVertexArray(VAO);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-
         const transV = self.state.grid.objectTransform(posX, posY);
-
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(self.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-
-        const textureLoc = gl.getUniformLocation(self.shaderProgram, "texture1");
-        gl.uniform1i(textureLoc, 0);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
-
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return SegmentErr.Error;
-        }
+        try glutils.draw(self.shaderProgram, VAO, self.texture, &self.indices, transV);
     }
 };

@@ -1,6 +1,7 @@
 const std = @import("std");
 const zstbi = @import("zstbi");
 const gl = @import("zopengl");
+const matrix = @import("../math/matrix.zig");
 
 pub const GLErr = error{Error};
 
@@ -165,4 +166,53 @@ pub fn initShader(name: []const u8, source: [:0]const u8, shaderType: c_uint) !g
     std.debug.print("INFO::SHADER::{s}::LINKING_SUCCESS\n{s}\n", .{ name, infoLog[0..i] });
 
     return shader;
+}
+
+pub fn draw(shaderProgram: gl.Uint, VAO: gl.Uint, texture: ?gl.Uint, indices: []const gl.Uint, transV: [4]gl.Float) !void {
+    gl.useProgram(shaderProgram);
+    var e = gl.getError();
+    if (e != gl.NO_ERROR) {
+        std.debug.print("error: {d}\n", .{e});
+        return GLErr.Error;
+    }
+    if (texture) |t| {
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("bind texture error: {d}\n", .{e});
+            return GLErr.Error;
+        }
+    }
+    gl.bindVertexArray(VAO);
+    e = gl.getError();
+    if (e != gl.NO_ERROR) {
+        std.debug.print("error: {d}\n", .{e});
+        return GLErr.Error;
+    }
+
+    var transform = matrix.scaleTranslateMat3(transV);
+    const location = gl.getUniformLocation(shaderProgram, "transform");
+    gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
+    e = gl.getError();
+    if (e != gl.NO_ERROR) {
+        std.debug.print("error: {d}\n", .{e});
+        return GLErr.Error;
+    }
+
+    if (texture) |_| {
+        const textureLoc = gl.getUniformLocation(shaderProgram, "texture1");
+        gl.uniform1i(textureLoc, 0);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return GLErr.Error;
+        }
+    }
+
+    gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((indices.len))), gl.UNSIGNED_INT, null);
+    if (e != gl.NO_ERROR) {
+        std.debug.print("error: {d}\n", .{e});
+        return GLErr.Error;
+    }
 }
