@@ -13,40 +13,36 @@ const bankUpLeftVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 1,  1,          0.5, 1,
                 1,  -1,         0.5, 0,
-                -1, -1,         1, 0,
-                -1, 1,          1, 1,
-};
-
-const idkyet: [16]gl.Float = [_]gl.Float{
-                // positions   // texture coords
-                // ◳            // ◲
-                1,  1,          1, 1,
-                // ◲           // ◳     
-                1,  -1,         1, 0,
-                // ◱           // ◰
-                -1, -1,         0.5, 0,
-                // ◰           // ◱   
-                -1, 1,          0.5, 1,
+                -1, -1,         0.75, 0,
+                -1, 1,          0.75, 1,
 };
 
 const horizontalVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 1,  1,          0.5, 1,
                 1,  -1,         0.5, 0,
-                -1, -1,         0, 0,
-                -1, 1,          0, 1,
+                -1, -1,         0.25, 0,
+                -1, 1,          0.25, 1,
 };
 
 const verticalVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 // ◳            // ◰
-                1,  1,          0.0, 1.0,
+                1,  1,          0.25, 1.0,
                 // ◲           // ◳      
                 1,  -1,         0.5, 1.0,
                 // ◱           // ◲
                 -1, -1,         0.5, 0.0,
                 // ◰           // ◱   
-                -1, 1,          0.0, 0.0,
+                -1, 1,          0.25, 0.0,
+};
+
+const bankDownRightVertices: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                 1,   1,         0.25, 1,
+                 1,  -1,         0.25, 0,
+                -1,  -1,         0.00, 0,
+                -1,   1,         0.00, 1,
 };
 
 const bankDownLeftVertices = verticalVertices;
@@ -57,7 +53,7 @@ const bankRightDownVertices = horizontalVertices;
 pub const Segment = struct {
     state: *state.State,
     indices: [6]gl.Uint,
-    VAOs: [5]gl.Uint,
+    VAOs: [6]gl.Uint,
     texture: gl.Uint,
     shaderProgram: gl.Uint,
     snakeHead: head.Head,
@@ -76,17 +72,19 @@ pub const Segment = struct {
                 undefined,
                 undefined,
                 undefined,
+                undefined,
             },
             .texture = undefined,
             .shaderProgram = undefined,
             .snakeHead = snakeHead,
         };
-        const combinedVertices = [5][16]gl.Float{
+        const combinedVertices = [6][16]gl.Float{
             bankUpLeftVertices,
             bankDownLeftVertices,
             horizontalVertices,
             verticalVertices,
             bankRightDownVertices,
+            bankDownRightVertices,
         };
         for (combinedVertices, 0..) |vertices, i| {
             const VAO = try glutils.initVAO(objectName);
@@ -207,6 +205,10 @@ pub const Segment = struct {
             }
             if (isSegmentBankingRightDown(segments, i)) {
                 try self.drawSegment(self.VAOs[4], posX, posY, offGrid);
+                continue;
+            }
+            if (isSegmentBankingDownRight(segments, i)) {
+                try self.drawSegment(self.VAOs[5], posX, posY, offGrid);
                 continue;
             }
             try self.drawSegment(self.VAOs[2], posX, posY, offGrid);
@@ -339,8 +341,8 @@ pub const Segment = struct {
         const aft = segments[index + 1];
         // grid origin top left is 0, 0, arrow represents before
         //
-        //           after
-        // current | ---
+        //          after
+        // current |---
         // before  ↓
         //
         // before below at same x
@@ -352,13 +354,56 @@ pub const Segment = struct {
         }
         // or
         //
-        //           before
-        // current | --→
+        //          before
+        // current |--→
         // after   |
         //
         // before is right at same y
         if (bef.x - 1 == cur.x and bef.y == cur.y) {
             // and after is below at same x:
+            if (aft.x == cur.x and aft.y - 1 == cur.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn isSegmentBankingDownRight(segments: []const state.coordinate, index: usize) bool {
+        if (index == 0) {
+            // index is head
+            return false;
+        }
+        if (segments.len == index + 1) {
+            // index is tail
+            return false;
+        }
+        const bef = segments[index - 1];
+        const cur = segments[index];
+        const aft = segments[index + 1];
+        // grid origin top left is 0, 0, arrow represents before
+        //
+        //
+        // before  ↑
+        // current |---
+        //          after
+        //
+        // before above at same x
+        if (bef.x == cur.x and bef.y + 1 == cur.y) {
+            // and after is right at same y
+            if (aft.x - 1 == cur.x and aft.y == cur.y) {
+                return true;
+            }
+        }
+        // or
+        //
+        //
+        // after   |
+        // current |--→
+        //          before
+        //
+        // before is right at same y
+        if (bef.x - 1 == cur.x and bef.y == cur.y) {
+            // and after is above at same x:
             if (aft.x == cur.x and aft.y + 1 == cur.y) {
                 return true;
             }
