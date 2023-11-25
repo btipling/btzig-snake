@@ -1,8 +1,6 @@
 const std = @import("std");
-const matrix = @import("../../math/matrix.zig");
 const gl = @import("zopengl");
 const glutils = @import("../../gl/gl.zig");
-const grid = @import("../../grid.zig");
 const state = @import("../../state.zig");
 
 pub const FoodErr = error{Error};

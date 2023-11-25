@@ -1,9 +1,7 @@
 const std = @import("std");
 const gl = @import("zopengl");
 const zstbi = @import("zstbi");
-const matrix = @import("../../math/matrix.zig");
 const glutils = @import("../../gl/gl.zig");
-const grid = @import("../../grid.zig");
 const state = @import("../../state.zig");
 
 pub const SegmentErr = error{Error};
