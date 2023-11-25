@@ -9,7 +9,7 @@ pub const SegmentErr = error{Error};
 const objectName = "segment";
 
 // zig fmt: off
-const bankUpRightVertices: [16]gl.Float = [_]gl.Float{
+const bankUpLeftVertices: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
                 1,  1,          0.5, 1,
                 1,  -1,         0.5, 0,
@@ -17,11 +17,15 @@ const bankUpRightVertices: [16]gl.Float = [_]gl.Float{
                 -1, 1,          1, 1,
 };
 
-const leftVertices: [16]gl.Float = [_]gl.Float{
+const idkyet: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
+                // ◳            // ◲
                 1,  1,          1, 1,
+                // ◲           // ◳     
                 1,  -1,         1, 0,
+                // ◱           // ◰
                 -1, -1,         0.5, 0,
+                // ◰           // ◱   
                 -1, 1,          0.5, 1,
 };
 
@@ -44,6 +48,8 @@ const verticalVertices: [16]gl.Float = [_]gl.Float{
                 // ◰           // ◱   
                 -1, 1,          0.0, 0.0,
 };
+
+const bankDownLeftVertices = verticalVertices;
 // zig fmt: on
 
 pub const Segment = struct {
@@ -72,7 +78,7 @@ pub const Segment = struct {
             .shaderProgram = undefined,
             .snakeHead = snakeHead,
         };
-        const combinedVertices = [4][16]gl.Float{ bankUpRightVertices, leftVertices, horizontalVertices, verticalVertices };
+        const combinedVertices = [4][16]gl.Float{ bankUpLeftVertices, bankDownLeftVertices, horizontalVertices, verticalVertices };
         for (combinedVertices, 0..) |vertices, i| {
             const VAO = try glutils.initVAO(objectName);
             _ = try glutils.initVBO(objectName);
@@ -186,6 +192,10 @@ pub const Segment = struct {
                 try self.drawSegment(self.VAOs[0], posX, posY, offGrid);
                 continue;
             }
+            if (isSegmentBankingDownLeft(segments, i)) {
+                try self.drawSegment(self.VAOs[1], posX, posY, offGrid);
+                continue;
+            }
             try self.drawSegment(self.VAOs[i % 2], posX, posY, offGrid);
         }
     }
@@ -253,6 +263,47 @@ pub const Segment = struct {
         //
         // before is below at same x
         if (bef.x == cur.x and bef.y - 1 == cur.y) {
+            // and after is left at same y:
+            if (aft.x + 1 == cur.x and aft.y == cur.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn isSegmentBankingDownLeft(segments: []const state.coordinate, index: usize) bool {
+        if (index == 0) {
+            // index is head
+            return false;
+        }
+        if (segments.len == index + 1) {
+            // index is tail
+            return false;
+        }
+        const bef = segments[index - 1];
+        const cur = segments[index];
+        const aft = segments[index + 1];
+        // grid origin top left is 0, 0, arrow represents before
+        //
+        //    | after
+        // ←--| current
+        // before
+        //
+        // before is left at same y
+        if (bef.x + 1 == cur.x and bef.y == cur.y) {
+            // and after is above at same x
+            if (aft.x == cur.x and aft.y + 1 == cur.y) {
+                return true;
+            }
+        }
+        // or
+        //
+        //    ↑ before
+        // ---| current
+        // after
+        //
+        // before is above at same x
+        if (bef.x == cur.x and bef.y + 1 == cur.y) {
             // and after is left at same y:
             if (aft.x + 1 == cur.x and aft.y == cur.y) {
                 return true;
