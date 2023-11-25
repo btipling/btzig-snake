@@ -82,18 +82,8 @@ pub fn run() !void {
     defer gameSound.destroy();
 
     try gameSound.playStartSound();
-    var segSideways = try segment.Segment.initSideways();
-    var segLeft = try segment.Segment.initLeft();
-    var segRight = try segment.Segment.initRight();
-    var headRight = try head.Head.initRight();
-    var headLeft = try head.Head.initLeft();
-    var headUp = try head.Head.initUp();
-    var headDown = try head.Head.initDown();
-    var foodItem = try food.Food.init();
-    var gameGrid = grid.Grid.init(cfg.grid_size);
-    var bg = try background.Background.init();
-    var gameSplash = try splash.Splash.init();
 
+    const gameGrid = grid.Grid.init(cfg.grid_size);
     var gameState = try state.State.init(
         gameGrid,
         cfg.initial_speed,
@@ -103,51 +93,38 @@ pub fn run() !void {
         allocator,
         &gameSound,
     );
-    state.State.generateFoodPosition(&gameState);
+
+    var stateInst = &gameState;
+    stateInst.generateFoodPosition();
+
+    var seg = try segment.Segment.init(stateInst);
+    var snakeHead = try head.Head.init(stateInst);
+    var foodItem = try food.Food.init(stateInst);
+    var bg = try background.Background.init(stateInst);
+    var gameSplash = try splash.Splash.init(stateInst);
+
     var lastTick = std.time.milliTimestamp();
     main_loop: while (!window.shouldClose()) {
         glfw.pollEvents();
-        const quit = try controls.handleKey(&gameState, window);
+        const quit = try controls.handleKey(stateInst, window);
         if (quit) {
             break :main_loop;
         }
         if (std.time.milliTimestamp() - lastTick > gameState.delay) {
-            try state.State.move(&gameState);
+            try stateInst.move();
             lastTick = std.time.milliTimestamp();
         }
         gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
-        try bg.draw(gameState.grid);
         // set opengl blending to allow for transparency in textures
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        const headCoords = gameState.segments.items[0];
-        const headPosX: gl.Float = try gameGrid.indexToGridPosition(headCoords.x);
-        const headPosY: gl.Float = try gameGrid.indexToGridPosition(headCoords.y);
-        if (gameState.direction == .Left) {
-            try headLeft.draw(headPosX, headPosY, gameState.grid);
-        } else if (gameState.direction == .Right) {
-            try headRight.draw(headPosX, headPosY, gameState.grid);
-        } else if (gameState.direction == .Up) {
-            try headUp.draw(headPosX, headPosY, gameState.grid);
-        } else {
-            try headDown.draw(headPosX, headPosY, gameState.grid);
-        }
-        for (gameState.segments.items[1..], 0..) |coords, i| {
-            const posX: gl.Float = try gameGrid.indexToGridPosition(coords.x);
-            const posY: gl.Float = try gameGrid.indexToGridPosition(coords.y);
-            switch (i % 2) {
-                0 => try segSideways.draw(posX, posY, gameState.grid),
-                1 => try segLeft.draw(posX, posY, gameState.grid),
-                2 => try segRight.draw(posX, posY, gameState.grid),
-                else => {},
-            }
-        }
-        try foodItem.draw(gameState.foodX, gameState.foodY, gameState.grid);
-        try ui.draw(&gameState, window);
-        if (gameState.paused) {
-            try gameSplash.draw(gameState.grid);
-        }
+        try bg.draw();
+        try snakeHead.draw();
+        try seg.draw();
+        try foodItem.draw();
+        try ui.draw(stateInst, window);
+        try gameSplash.draw();
         window.swapBuffers();
     }
 }

@@ -1,21 +1,22 @@
 const std = @import("std");
-const matrix = @import("../../math/matrix.zig");
 const gl = @import("zopengl");
 const glutils = @import("../../gl/gl.zig");
-const grid = @import("../../grid.zig");
+const state = @import("../../state.zig");
 
 pub const FoodErr = error{Error};
 const objectName = "food";
 
 pub const Food = struct {
+    state: *state.State,
     num_vertices: gl.Uint,
     vertices: [202]gl.Float, // 2 * (num_vertices + 1) because we need to add the center point
     indices: [299]gl.Uint, // 3 * (num_vertices - 1) because we need to add the center point
     VAO: gl.Uint,
     shaderProgram: gl.Uint,
 
-    pub fn init() !Food {
+    pub fn init(gameState: *state.State) !Food {
         var rv = Food{
+            .state = gameState,
             .num_vertices = 100,
             .vertices = undefined,
             .indices = undefined,
@@ -67,35 +68,8 @@ pub const Food = struct {
         }
     }
 
-    pub fn draw(self: Food, posX: gl.Float, posY: gl.Float, gameGrid: grid.Grid) !void {
-        gl.useProgram(self.shaderProgram);
-        var e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
-        gl.bindVertexArray(self.VAO);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
-
-        const transV = gameGrid.objectTransform(posX, posY);
-
-        var transform = matrix.scaleTranslateMat3(transV);
-        const location = gl.getUniformLocation(self.shaderProgram, "transform");
-        gl.uniformMatrix3fv(location, 1, gl.FALSE, &transform);
-        e = gl.getError();
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
-
-        gl.drawElements(gl.TRIANGLES, @as(c_int, @intCast((self.indices.len))), gl.UNSIGNED_INT, null);
-        if (e != gl.NO_ERROR) {
-            std.debug.print("error: {d}\n", .{e});
-            return FoodErr.Error;
-        }
+    pub fn draw(self: Food) !void {
+        const transV = self.state.grid.objectTransform(self.state.foodX, self.state.foodY);
+        try glutils.draw(self.shaderProgram, self.VAO, null, &self.indices, transV);
     }
 };
