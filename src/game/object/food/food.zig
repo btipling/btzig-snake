@@ -2,6 +2,7 @@ const std = @import("std");
 const gl = @import("zopengl");
 const glutils = @import("../../gl/gl.zig");
 const state = @import("../../state.zig");
+const bug = @import("bug.zig");
 
 pub const FoodErr = error{Error};
 const objectName = "food";
@@ -13,8 +14,10 @@ pub const Food = struct {
     indices: [299]gl.Uint, // 3 * (num_vertices - 1) because we need to add the center point
     VAO: gl.Uint,
     shaderProgram: gl.Uint,
+    bug: bug.Bug,
 
     pub fn init(gameState: *state.State) !Food {
+        const bugObj = try bug.Bug.init(gameState);
         var rv = Food{
             .state = gameState,
             .num_vertices = 100,
@@ -22,6 +25,7 @@ pub const Food = struct {
             .indices = undefined,
             .VAO = undefined,
             .shaderProgram = undefined,
+            .bug = bugObj,
         };
 
         rv.vertices[0] = 0.0;
@@ -69,7 +73,10 @@ pub const Food = struct {
     }
 
     pub fn draw(self: Food) !void {
-        const transV = self.state.grid.objectTransform(self.state.foodX, self.state.foodY);
+        var transV = self.state.grid.objectTransform(self.state.foodX, self.state.foodY);
+        transV[0] = transV[0] * 1.5;
+        transV[1] = transV[1] * 1.5;
         try glutils.draw(self.shaderProgram, self.VAO, null, &self.indices, transV);
+        try self.bug.draw();
     }
 };

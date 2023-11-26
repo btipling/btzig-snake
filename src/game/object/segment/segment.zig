@@ -143,7 +143,7 @@ pub const Segment = struct {
             try initData(vertices);
             rv.VAOs[i] = VAO;
         }
-        rv.texture = try rv.initTexture();
+        rv.texture = try initTexture();
         const vertexShader = try glutils.initVertexShader(@embedFile("shaders/segment.vs"), objectName);
         const fragmentShader = try glutils.initFragmentShader(@embedFile("shaders/segment.fs"), objectName);
         rv.shaderProgram = try glutils.initProgram("BACKGROUND", &[_]gl.Uint{ vertexShader, fragmentShader });
@@ -161,8 +161,7 @@ pub const Segment = struct {
         return EBO;
     }
 
-    fn initTexture(self: Segment) !gl.Uint {
-        _ = self;
+    fn initTexture() !gl.Uint {
         var texture: gl.Uint = undefined;
         var e: gl.Uint = 0;
         gl.genTextures(1, &texture);
