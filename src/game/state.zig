@@ -32,6 +32,7 @@ pub const State = struct {
     lastMove: i64,
     lastUI: i64,
     sound: *sound.Sound,
+    currentBug: u2,
 
     pub fn init(
         gameGrid: grid.Grid,
@@ -59,6 +60,7 @@ pub const State = struct {
             .lastMove = 0,
             .lastUI = 0,
             .sound = gameSound,
+            .currentBug = 0,
         };
     }
 
@@ -106,7 +108,8 @@ pub const State = struct {
             // decrease delay exponentially
             self.delay = @as(gl.Uint, @intFromFloat(@as(gl.Float, @floatFromInt(self.delay)) * 0.9));
             std.debug.print("Score: {d} Delay: {d}\n", .{ newScore, self.delay });
-            try self.sound.playFoodSound();
+            try self.sound.playFoodSound(self.currentBug);
+            self.currentBug = (self.currentBug + 1) % 3;
         }
         var prevX: gl.Float = 0.0;
         var prevY: gl.Float = 0.0;

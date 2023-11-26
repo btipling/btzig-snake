@@ -12,7 +12,6 @@ pub const Sound = struct {
     foodSound1: ?*zaudio.Sound,
     foodSound2: ?*zaudio.Sound,
     foodSound3: ?*zaudio.Sound,
-    lastFoodSound: u32,
     gameOverSound: ?*zaudio.Sound,
 
     pub fn init(engine: *zaudio.Engine) Sound {
@@ -25,7 +24,6 @@ pub const Sound = struct {
             .foodSound1 = null,
             .foodSound2 = null,
             .foodSound3 = null,
-            .lastFoodSound = 3,
             .gameOverSound = null,
         };
     }
@@ -93,8 +91,8 @@ pub const Sound = struct {
         }
     }
 
-    pub fn playFoodSound(self: *Sound) !void {
-        switch (self.lastFoodSound) {
+    pub fn playFoodSound(self: *Sound, soundNo: u2) !void {
+        switch (soundNo) {
             1 => {
                 if (self.foodSound2 == null) {
                     self.foodSound2 = try self.engine.createSoundFromFile(content_dir ++ "food2.mp3", .{ .flags = .{ .stream = true } });
@@ -102,7 +100,6 @@ pub const Sound = struct {
                 if (self.foodSound2) |sound| {
                     try sound.start();
                 }
-                self.lastFoodSound = 2;
             },
             2 => {
                 if (self.foodSound3 == null) {
@@ -111,7 +108,6 @@ pub const Sound = struct {
                 if (self.foodSound3) |sound| {
                     try sound.start();
                 }
-                self.lastFoodSound = 3;
             },
             else => {
                 if (self.foodSound1 == null) {
@@ -120,7 +116,6 @@ pub const Sound = struct {
                 if (self.foodSound1) |sound| {
                     try sound.start();
                 }
-                self.lastFoodSound = 1;
             },
         }
     }

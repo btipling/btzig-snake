@@ -12,47 +12,47 @@ const objectName = "bug";
 // The bugs texture is 4 bugs wide and 1 bug tall
 const firstBug: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
-                // ◳            // ◳
-                1,  1,          0.25, 0.0,
-                // ◲           // ◲       
-                1,  -1,         0.25, 1.0,
-                // ◱           // ◱
-                -1, -1,         0.0, 1.0,
-                // ◰           // ◰  
-                -1, 1,          0.0, 0.0,
+                // ◳            // ◲
+                1,  1,          0.25, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.25, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.0, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.0, 1.0,
 };
 const secondBug: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
-                // ◳            // ◳
-                1,  1,          0.5, 0.0,
-                // ◲           // ◲       
-                1,  -1,         0.5, 1.0,
-                // ◱           // ◱
-                -1, -1,         0.25, 1.0,
-                // ◰           // ◰  
-                -1, 1,          0.25, 0.0,
+                // ◳            // ◲
+                1,  1,          0.5, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.5, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.25, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.25, 1.0,
 };
 const thirdBug: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
-                // ◳            // ◳
-                1,  1,          0.75, 0.0,
-                // ◲           // ◲       
-                1,  -1,         0.75, 1.0,
-                // ◱           // ◱
-                -1, -1,         0.5, 1.0,
-                // ◰           // ◰  
-                -1, 1,          0.5, 0.0,
+                // ◳            // ◲
+                1,  1,          0.75, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.75, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.5, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.5, 1.0,
 };
 const fourthBug: [16]gl.Float = [_]gl.Float{
                 // positions   // texture coords
-                // ◳           // ◳
-                1,  1,          1.0, 0.0,
-                // ◲           // ◲       
-                1,  -1,         1.0, 1.0,
-                // ◱           // ◱
-                -1, -1,         0.75, 1.0,
-                // ◰           // ◰  
-                -1, 1,          0.75, 0.0,
+                // ◳            // ◲
+                1,  1,          1.0, 1.0,
+                // ◲           // ◳      
+                1,  -1,         1.0, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.75, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.75, 1.0,
 };
 // zig fmt: on
 
@@ -164,7 +164,7 @@ pub const Bug = struct {
     }
 
     pub fn draw(self: Bug) !void {
-        return self.drawBugAt(self.state.foodX, self.state.foodY, 0, null);
+        return self.drawBugAt(self.state.foodX, self.state.foodY, self.state.currentBug, null);
     }
 
     pub fn drawBugAt(self: Bug, posX: gl.Float, posY: gl.Float, index: usize, offGrid: ?[2]gl.Float) !void {
