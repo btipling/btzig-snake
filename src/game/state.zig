@@ -106,7 +106,11 @@ pub const State = struct {
             State.generateFoodPosition(self);
             addone = true;
             // decrease delay exponentially
-            self.delay = @as(gl.Uint, @intFromFloat(@as(gl.Float, @floatFromInt(self.delay)) * 0.9));
+            const currentDelay = @as(gl.Float, @floatFromInt(self.delay));
+            const numSegments = @as(gl.Float, @floatFromInt(self.segments.items.len));
+            // decrease delay between movements by 0.9 but reduce delay decreases the higher the number of snake segments
+            const newDelay = currentDelay * 0.98 - (numSegments * 0.1);
+            self.delay = @as(gl.Uint, @intFromFloat(newDelay));
             std.debug.print("Score: {d} Delay: {d}\n", .{ newScore, self.delay });
             try self.sound.playFoodSound(self.currentBug);
             self.currentBug = (self.currentBug + 1) % 3;

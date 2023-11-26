@@ -100,7 +100,7 @@ pub fn run() !void {
     var foodItem = try food.Food.init(stateInst);
     var bg = try background.Background.init(stateInst);
     var gameSplash = try splash.Splash.init(stateInst);
-    var gameUI = try ui.UI.init(stateInst, window, snake);
+    var gameUI = try ui.UI.init(stateInst, window, snake, foodItem.bug);
 
     var lastTick = std.time.milliTimestamp();
     main_loop: while (!window.shouldClose()) {

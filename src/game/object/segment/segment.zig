@@ -222,9 +222,8 @@ pub const Segment = struct {
         return self.drawSegments(self.state.segments.items, null);
     }
 
-    pub fn drawDemoSnake(self: Segment, segments: []const state.coordinate, direction: state.Direction) !void {
+    pub fn drawDemoSnake(self: Segment, segments: []const state.coordinate, direction: state.Direction, offGrid: ?[2]gl.Float) !void {
         const coords = segments[0];
-        const offGrid = [2]gl.Float{ 1.3, -0.02 };
         try self.snakeHead.drawAt(coords.x, coords.y, direction, offGrid);
         return self.drawSegments(segments, offGrid);
     }

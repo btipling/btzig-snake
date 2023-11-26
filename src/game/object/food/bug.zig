@@ -164,10 +164,10 @@ pub const Bug = struct {
     }
 
     pub fn draw(self: Bug) !void {
-        return self.drawBugAt(self.state.foodX, self.state.foodY, self.state.currentBug, null);
+        return self.drawAt(self.state.foodX, self.state.foodY, self.state.currentBug, null);
     }
 
-    pub fn drawBugAt(self: Bug, posX: gl.Float, posY: gl.Float, index: usize, offGrid: ?[2]gl.Float) !void {
+    pub fn drawAt(self: Bug, posX: gl.Float, posY: gl.Float, index: usize, offGrid: ?[2]gl.Float) !void {
         return self.drawBug(self.VAOs[index], posX, posY, offGrid);
     }
 

@@ -1,16 +1,19 @@
 const std = @import("std");
 const zgui = @import("zgui");
 const glfw = @import("zglfw");
+const gl = @import("zopengl");
 const state = @import("../state.zig");
 const segment = @import("../object/segment/segment.zig");
+const bug = @import("../object/food/bug.zig");
 
 pub const UI = struct {
     state: *state.State,
     window: *glfw.Window,
     demoSnake: [41]state.coordinate,
     segment: segment.Segment,
+    bug: bug.Bug,
 
-    pub fn init(gameState: *state.State, window: *glfw.Window, seg: segment.Segment) !UI {
+    pub fn init(gameState: *state.State, window: *glfw.Window, seg: segment.Segment, bugObj: bug.Bug) !UI {
         return UI{
             .state = gameState,
             .window = window,
@@ -58,11 +61,16 @@ pub const UI = struct {
                 .{ .x = 16, .y = 5 },
             },
             .segment = seg,
+            .bug = bugObj,
         };
     }
 
     pub fn draw(self: UI) !void {
-        try self.segment.drawDemoSnake(&self.demoSnake, state.Direction.Left);
+        const offGrid = [2]gl.Float{ 1.3, -0.02 };
+        try self.segment.drawDemoSnake(&self.demoSnake, state.Direction.Left, offGrid);
+        try self.bug.drawAt(8, 4, 0, offGrid);
+        try self.bug.drawAt(10, 4, 1, offGrid);
+        try self.bug.drawAt(12, 4, 2, offGrid);
         try self.drawSidebar();
     }
 

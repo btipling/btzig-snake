@@ -121,9 +121,9 @@ pub const Grid = struct {
     pub fn randomGridPosition(self: Grid, i: u32) [2]gl.Float {
         var prng = std.rand.DefaultPrng.init(@as(u64, @intCast(i)) + @as(u64, @intCast(std.time.milliTimestamp())));
         const random = prng.random();
-        const max = @as(u32, @intFromFloat(self.size));
-        const x = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
-        const y = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max)));
+        const max = @as(u32, @intFromFloat(self.size - 3)); // - 3 to avoid spawning on the edge
+        const x = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max))) + 1.0;
+        const y = @as(gl.Float, @floatFromInt(random.uintAtMost(u32, max))) + 1.0;
         std.debug.print("Food moved to x: {d}, y: {d}\n", .{ x, y });
         return [_]gl.Float{ self.constrainGridPosition(x), self.constrainGridPosition(y) };
     }
