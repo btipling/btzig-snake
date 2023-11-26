@@ -143,7 +143,7 @@ pub const Segment = struct {
             try initData(vertices);
             rv.VAOs[i] = VAO;
         }
-        rv.texture = try rv.initTexture();
+        rv.texture = try initTexture();
         const vertexShader = try glutils.initVertexShader(@embedFile("shaders/segment.vs"), objectName);
         const fragmentShader = try glutils.initFragmentShader(@embedFile("shaders/segment.fs"), objectName);
         rv.shaderProgram = try glutils.initProgram("BACKGROUND", &[_]gl.Uint{ vertexShader, fragmentShader });
@@ -161,8 +161,7 @@ pub const Segment = struct {
         return EBO;
     }
 
-    fn initTexture(self: Segment) !gl.Uint {
-        _ = self;
+    fn initTexture() !gl.Uint {
         var texture: gl.Uint = undefined;
         var e: gl.Uint = 0;
         gl.genTextures(1, &texture);
@@ -223,9 +222,8 @@ pub const Segment = struct {
         return self.drawSegments(self.state.segments.items, null);
     }
 
-    pub fn drawDemoSnake(self: Segment, segments: []const state.coordinate, direction: state.Direction) !void {
+    pub fn drawDemoSnake(self: Segment, segments: []const state.coordinate, direction: state.Direction, offGrid: ?[2]gl.Float) !void {
         const coords = segments[0];
-        const offGrid = [2]gl.Float{ 1.3, -0.02 };
         try self.snakeHead.drawAt(coords.x, coords.y, direction, offGrid);
         return self.drawSegments(segments, offGrid);
     }

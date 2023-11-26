@@ -1,0 +1,182 @@
+const std = @import("std");
+const gl = @import("zopengl");
+const zstbi = @import("zstbi");
+const glutils = @import("../../gl/gl.zig");
+const state = @import("../../state.zig");
+const head = @import("../head/head.zig");
+
+pub const BugErr = error{Error};
+const objectName = "bug";
+
+// zig fmt: off
+// The bugs texture is 4 bugs wide and 1 bug tall
+const firstBug: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳            // ◲
+                1,  1,          0.25, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.25, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.0, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.0, 1.0,
+};
+const secondBug: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳            // ◲
+                1,  1,          0.5, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.5, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.25, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.25, 1.0,
+};
+const thirdBug: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳            // ◲
+                1,  1,          0.75, 1.0,
+                // ◲           // ◳      
+                1,  -1,         0.75, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.5, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.5, 1.0,
+};
+const fourthBug: [16]gl.Float = [_]gl.Float{
+                // positions   // texture coords
+                // ◳            // ◲
+                1,  1,          1.0, 1.0,
+                // ◲           // ◳      
+                1,  -1,         1.0, 0.0,
+                // ◱           // ◰
+                -1, -1,         0.75, 0.0,
+                // ◰           // ◱ 
+                -1, 1,          0.75, 1.0,
+};
+// zig fmt: on
+
+const num_vaos: comptime_int = 4;
+
+pub const Bug = struct {
+    state: *state.State,
+    indices: [6]gl.Uint,
+    VAOs: [num_vaos]gl.Uint,
+    texture: gl.Uint,
+    shaderProgram: gl.Uint,
+
+    pub fn init(gameState: *state.State) !Bug {
+        var rv = Bug{
+            .state = gameState,
+            .indices = [_]gl.Uint{
+                0, 1, 3,
+                1, 2, 3,
+            },
+            .VAOs = [_]gl.Uint{undefined} ** num_vaos,
+            .texture = undefined,
+            .shaderProgram = undefined,
+        };
+        const combinedVertices = [_][16]gl.Float{
+            firstBug,
+            secondBug,
+            thirdBug,
+            fourthBug,
+        };
+        for (combinedVertices, 0..) |vertices, i| {
+            const VAO = try glutils.initVAO(objectName);
+            _ = try glutils.initVBO(objectName);
+            _ = try rv.initEBO();
+            try initData(vertices);
+            rv.VAOs[i] = VAO;
+        }
+        rv.texture = try initTexture();
+        const vertexShader = try glutils.initVertexShader(@embedFile("shaders/bug.vs"), objectName);
+        const fragmentShader = try glutils.initFragmentShader(@embedFile("shaders/bug.fs"), objectName);
+        rv.shaderProgram = try glutils.initProgram("BACKGROUND", &[_]gl.Uint{ vertexShader, fragmentShader });
+        return rv;
+    }
+
+    fn initEBO(self: Bug) !gl.Uint {
+        const EBO = glutils.initEBO(objectName);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indices.len * @sizeOf(gl.Int), &self.indices, gl.STATIC_DRAW);
+        const e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("{s} buffer data error: {d}\n", .{ objectName, e });
+            return BugErr.Error;
+        }
+        return EBO;
+    }
+
+    fn initTexture() !gl.Uint {
+        var texture: gl.Uint = undefined;
+        var e: gl.Uint = 0;
+        gl.genTextures(1, &texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        const snake_ext: [:0]const u8 = @embedFile("../../assets/textures/bugs.png");
+        var image = try zstbi.Image.loadFromMemory(snake_ext, 4);
+        defer image.deinit();
+        std.debug.print("loaded image {d}x{d}\n", .{ image.width, image.height });
+
+        const width: gl.Int = @as(gl.Int, @intCast(image.width));
+        const height: gl.Int = @as(gl.Int, @intCast(image.height));
+        const imageData: *const anyopaque = image.data.ptr;
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, imageData);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return BugErr.Error;
+        }
+        gl.generateMipmap(gl.TEXTURE_2D);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return BugErr.Error;
+        }
+        return texture;
+    }
+
+    fn initData(vertices: [16]gl.Float) !void {
+        gl.bufferData(gl.ARRAY_BUFFER, vertices.len * @sizeOf(gl.Float), &vertices, gl.STATIC_DRAW);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 4 * @sizeOf(gl.Float), null);
+        gl.enableVertexAttribArray(0);
+        var e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return BugErr.Error;
+        }
+        gl.vertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, 4 * @sizeOf(gl.Float), @as(*anyopaque, @ptrFromInt(2 * @sizeOf(gl.Float))));
+        gl.enableVertexAttribArray(1);
+        e = gl.getError();
+        if (e != gl.NO_ERROR) {
+            std.debug.print("error: {d}\n", .{e});
+            return BugErr.Error;
+        }
+    }
+
+    fn initShaderProgram(self: Bug) !gl.Uint {
+        return glutils.initProgram("BUG", &[_]gl.Uint{ self.vertexShader, self.fragmentShader });
+    }
+
+    pub fn draw(self: Bug) !void {
+        return self.drawAt(self.state.foodX, self.state.foodY, self.state.currentBug, null);
+    }
+
+    pub fn drawAt(self: Bug, posX: gl.Float, posY: gl.Float, index: usize, offGrid: ?[2]gl.Float) !void {
+        return self.drawBug(self.VAOs[index], posX, posY, offGrid);
+    }
+
+    fn drawBug(self: Bug, VAO: gl.Uint, posX: gl.Float, posY: gl.Float, offGrid: ?[2]gl.Float) !void {
+        var transV = self.state.grid.objectTransform(posX, posY);
+        if (offGrid) |offset| {
+            transV[2] += offset[0];
+            transV[3] += offset[1];
+        }
+        try glutils.draw(self.shaderProgram, VAO, self.texture, &self.indices, transV);
+    }
+};
