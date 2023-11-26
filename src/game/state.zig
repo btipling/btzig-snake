@@ -108,7 +108,7 @@ pub const State = struct {
             // decrease delay exponentially
             const currentDelay = @as(gl.Float, @floatFromInt(self.delay));
             const numSegments = @as(gl.Float, @floatFromInt(self.segments.items.len));
-            // decrease delay between movements by 0.9 but reduce delay decreases the higher the number of snake segments
+            // decrease delay between movements by 0.98 but reduce delay decreases the higher the number of snake segments
             const newDelay = currentDelay * 0.98 - (numSegments * 0.1);
             self.delay = @as(gl.Uint, @intFromFloat(newDelay));
             std.debug.print("Score: {d} Delay: {d}\n", .{ newScore, self.delay });

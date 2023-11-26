@@ -84,7 +84,7 @@ pub const UI = struct {
         zgui.setNextWindowPos(.{ .x = xPos, .y = yPos, .cond = .always });
         zgui.setNextWindowSize(.{
             .w = 300,
-            .h = 40,
+            .h = 80,
         });
         zgui.setNextItemWidth(-1);
         const style = zgui.getStyle();
@@ -104,6 +104,7 @@ pub const UI = struct {
             },
         })) {
             zgui.text("Score: {d}", .{self.state.score});
+            zgui.text("Delay: {d} ms", .{self.state.delay});
         }
         zgui.end();
         zgui.backend.draw();
